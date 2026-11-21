@@ -1,6 +1,6 @@
-# ♞ Cờ Vua Cùng Cú Mèo
+# ♞ Cờ Vua Cùng Khủng Long
 
-Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Chú Cú Mèo hướng dẫn, nhận xét và đọc to lời khuyên.
+Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Bạn Khủng Long Xanh hướng dẫn, nhận xét và đọc to lời khuyên.
 
 **Chơi ngay:** https://danthuongvn.github.io/co-vua/
 

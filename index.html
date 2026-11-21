@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Cờ Vua Cùng Cú Mèo</title>
+<title>Cờ Vua Cùng Khủng Long</title>
 <style>
   :root{
     --bg:#fff8e7; --ink:#3b2f2f; --light:#f3dcb4; --dark:#b5835a;
@@ -90,13 +90,13 @@
 <body>
 <header>
   <button class="iconbtn" id="homeBtn" aria-label="Về trang chủ">🏠</button>
-  <h1>♞ Cờ Vua Cùng Cú Mèo</h1>
+  <h1>♞ Cờ Vua của Minh</h1>
   <button class="iconbtn" id="voiceBtn" aria-label="Bật tắt giọng đọc">🔊</button>
 </header>
 
 <main>
   <div class="guide">
-    <div class="owl" id="owl">🦉</div>
+    <div class="owl" id="owl">🦖</div>
     <div class="bubble" id="bubble">Chào con!</div>
   </div>
 
@@ -119,7 +119,7 @@
   <!-- Bàn cờ -->
   <section id="boardWrap" class="hidden" style="display:flex;flex-direction:column;gap:8px">
     <div class="levelrow" id="levelRow"></div>
-    <div class="toggle" id="coachRow"><label><input type="checkbox" id="coachChk" checked> Cú nhắc khi quân bị dọa</label></div>
+    <div class="toggle" id="coachRow"><label><input type="checkbox" id="coachChk" checked> Khủng Long nhắc khi quân bị dọa</label></div>
     <div class="captured" id="capTop"></div>
     <div class="board" id="board"></div>
     <div class="captured" id="capBottom"></div>
@@ -3581,7 +3581,7 @@ function speak(text){
 }
 function updateVoiceBtn(){$('voiceBtn').textContent=voiceOn?'🔊':'🔇'}
 $('voiceBtn').onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem('covua-voice',voiceOn?'on':'off')}catch(e){}
-  updateVoiceBtn();if(!voiceOn&&'speechSynthesis' in window)speechSynthesis.cancel();else speak('Cú Mèo sẽ đọc cho con nghe nhé!')};
+  updateVoiceBtn();if(!voiceOn&&'speechSynthesis' in window)speechSynthesis.cancel();else speak('Khủng Long sẽ đọc cho con nghe nhé!')};
 updateVoiceBtn();
 let actx=null;
 function beep(freq=520,dur=.08,type='sine',vol=.15){
@@ -3665,7 +3665,7 @@ function goHome(){
   const today=todayKey(), d=progress.daily[today]||[];
   $('stats').innerHTML=`🧩 Câu đố đã giải: <b>${solvedCount()}</b>/${PUZ.length} &nbsp; 🗓️ Hôm nay: <b>${d.length}</b>/5<br>`+
     `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}`;
-  say(d.length>=5?'Con đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?':'Chào con! Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!');
+  say(d.length>=5?'Nhật Minh đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?':'Chào Nhật Minh! Mình là Khủng Long Xanh. Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!');
 }
 $('homeBtn').onclick=goHome;
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
@@ -3742,11 +3742,11 @@ function renderLevels(){
   });
 }
 $('coachChk').onchange=e=>{progress.coach=e.target.checked;save();
-  say(progress.coach?'Cú sẽ nhắc khi quân của con bị dọa.':'Cú sẽ im lặng để con tự nghĩ. Nhớ tự hỏi 3 câu trước khi đi nhé!')};
+  say(progress.coach?'Khủng Long sẽ nhắc khi quân của con bị dọa.':'Khủng Long sẽ im lặng để con tự nghĩ. Nhớ tự hỏi 3 câu trước khi đi nhé!')};
 function startGame(m){
   mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;startedLevel=progress.level;
   show(m);renderLevels();$('coachChk').checked=!!progress.coach;renderGame();
-  if(m==='bot'){Engine.init();say('Con cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!')}
+  if(m==='bot'){Engine.init();say('Minh cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!')}
   else say('Hai bạn chơi cùng nhau nhé! Bên Trắng đi trước.');
 }
 function renderGame(){
@@ -3851,7 +3851,7 @@ function endCheck(){
     if(mode==='bot'&&loser==='b'){
       progress.wins++;progress.levelWins[startedLevel]=(progress.levelWins[startedLevel]||0)+1;
       const next=startedLevel<LEVELS.length-1&&progress.levelWins[startedLevel]>=2?` Con đã thắng mức này ${progress.levelWins[startedLevel]} lần, thử mức ${LEVELS[startedLevel+1].name.split(' ')[1]} xem!`:'';
-      say('Chiếu hết! Con thắng rồi!'+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
+      say('Chiếu hết! Nhật Minh thắng rồi!'+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
     }else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con! Bấm Xem lại ván để tìm xem mình sai ở đâu nhé.');
     else{say(`Chiếu hết! ${loser==='w'?'Bên Đen':'Bên Trắng'} thắng rồi!`,{happy:true});confetti();sfx.win()}
   }else if(game.isStalemate())say('Hết nước đi mà Vua không bị chiếu, nên ván này hòa. Lần sau khi đang thắng, nhớ chừa đường cho Vua bên kia nhé!');
@@ -3871,7 +3871,7 @@ $('undoBtn').onclick=()=>{
 };
 $('hintBtn').onclick=async()=>{
   if(busy||game.isGameOver()||game.turn()!=='w')return;
-  busy=true;say('Cú đang suy nghĩ...',{voice:false});
+  busy=true;say('Khủng Long đang suy nghĩ...',{voice:false});
   let u=null;
   try{const a=await Engine.analyse(game.fen(),{depth:10});u=a.best}catch(e){}
   busy=false;
@@ -3884,7 +3884,7 @@ $('hintBtn').onclick=async()=>{
   else if(best.captured)why=`Nước này ăn được quân ${NAMES[best.captured]}.`;
   else if(best.san.includes('+'))why='Nước này chiếu Vua của máy.';
   else{const f=flipped(game),d=f?threats(f):[];if(d.some(x=>x.sq===best.from))why='Nước này cứu quân đang bị dọa.'}
-  say(`Cú gợi ý: ${NAMES[best.piece]} từ ${best.from} đến ${best.to}. ${why}`);
+  say(`Khủng Long gợi ý: ${NAMES[best.piece]} từ ${best.from} đến ${best.to}. ${why}`);
 };
 
 // ====== Xem lại ván ======
@@ -3899,7 +3899,7 @@ async function reviewGame(){
   for(const m of hist){g.move(m);fens.push(g.fen())}
   const evals=new Array(fens.length);
   for(let i=0;i<fens.length;i++){
-    say(`Cú đang xem lại ván cờ... ${Math.round(i/fens.length*100)}%`,{voice:false});
+    say(`Khủng Long đang xem lại ván cờ... ${Math.round(i/fens.length*100)}%`,{voice:false});
     const gg=new Chess(fens[i]);
     if(gg.isCheckmate()){evals[i]={best:null,cp:-1000};continue}
     if(gg.isDraw()){evals[i]={best:null,cp:0};continue}
@@ -3945,7 +3945,7 @@ function showReview(j){
   const n=Math.floor(x.i/2)+1;
   let t=`Nước ${n}: con đi ${NAMES[x.m.piece]} ${x.m.from} đến ${x.m.to}. `;
   if(x.cat==='great')t+='Đây là nước rất hay!';
-  else if(x.cat==='good')t+='Nước này ổn. '+(bestU?`Cú thích ${describe(g,bestU)} hơn một chút.`:'');
+  else if(x.cat==='good')t+='Nước này ổn. '+(bestU?`Khủng Long thích ${describe(g,bestU)} hơn một chút.`:'');
   else if(x.cat==='miss')t+=`Ở đây con có thể chiếu hết! Nước ô xanh là ${describe(g,bestU)}.`;
   else{
     const g2=new Chess(RV.fens[x.i+1]);const t2=threats(g2);
@@ -4040,11 +4040,11 @@ function puzzleMove(mv){
   progress.solved[p.id]=Math.max(progress.solved[p.id]||0,stars);
   if(P.daily){const k=todayKey();progress.daily[k]=progress.daily[k]||[];if(!progress.daily[k].includes(p.id))progress.daily[k].push(p.id)}
   save();sfx.win();
-  let msg=(stars===3?'Xuất sắc! Đúng ngay lần đầu! ⭐⭐⭐':stars===2?'Giỏi lắm! ⭐⭐':'Làm được rồi! ⭐')+' ';
+  let msg=(stars===3?'Xuất sắc, Nhật Minh! Đúng ngay lần đầu! ⭐⭐⭐':stars===2?'Giỏi lắm! ⭐⭐':'Làm được rồi! ⭐')+' ';
   if(p.theme==='mate1'||p.theme==='mate2')msg+='Chiếu hết! Vua đối phương không còn đường chạy.';
   else if(p.theme==='fork')msg+=`Quân ${NAMES[res.piece]} tấn công 2 quân cùng lúc, đối phương chỉ cứu được một!`;
   else msg+=`Ăn được quân ${NAMES[res.captured||'p']} mà không bị mất gì.`;
-  if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=' Con đã xong 5 câu đố hôm nay!';confetti()}
+  if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=' Minh đã xong 5 câu đố hôm nay!';confetti()}
   say(msg,{happy:true});
   // diễn tiếp phần còn lại cho câu thắng quân
   if(p.cont&&p.cont.length===2&&p.theme!=='mate1'&&p.theme!=='mate2'){
@@ -4112,7 +4112,7 @@ function lessonClick(sq){
   if(L.stars.size===0){
     const ls=LESSONS[L.idx];
     if(L.round+1<ls.rounds.length){say('Giỏi quá! Sang màn tiếp theo nào!',{happy:true});sfx.win();setTimeout(()=>startLesson(L.idx,L.round+1),1800)}
-    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();say(`Tuyệt vời! Con đã học xong quân ${NAMES[ls.t]}!`,{happy:true})}
+    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();say(`Tuyệt vời! Minh đã học xong quân ${NAMES[ls.t]}!`,{happy:true})}
   }else if(!(L.type==='q'&&LESSONS[L.idx].t==='p'))say(`Còn ${L.stars.size} ngôi sao nữa thôi!`,{voice:false});
 }
 $('retryBtn').onclick=()=>L&&startLesson(L.idx,0);
