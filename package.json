@@ -1,0 +1,13 @@
+{
+  "name": "co-vua",
+  "private": true,
+  "description": "Cờ Vua Cùng Cú Mèo - web học cờ vua cho trẻ em",
+  "scripts": {
+    "build": "sh tools/build.sh",
+    "puzzles": "node tools/genpuzzles.js 300 1 && node tools/verify.js"
+  },
+  "devDependencies": {
+    "chess.js": "^1.4.0",
+    "stockfish": "^19.0.1"
+  }
+}

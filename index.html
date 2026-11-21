@@ -8,13 +8,14 @@
   :root{
     --bg:#fff8e7; --ink:#3b2f2f; --light:#f3dcb4; --dark:#b5835a;
     --accent:#ff8a3d; --green:#3fae5a; --blue:#4a90e2; --red:#e8505b;
+    --pf:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;font-family:"Nunito","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);
     min-height:100vh;display:flex;flex-direction:column;align-items:center}
   header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
     background:#ffd36b;box-shadow:0 2px 0 #e9b949}
-  header h1{font-size:1.25rem;margin:0}
+  header h1{font-size:1.2rem;margin:0}
   .iconbtn{border:none;background:#fff;border-radius:12px;font-size:1.4rem;width:46px;height:46px;cursor:pointer;
     box-shadow:0 3px 0 #d9a93a}
   main{width:100%;max-width:560px;padding:12px;display:flex;flex-direction:column;gap:12px}
@@ -33,9 +34,11 @@
   .sq.last{box-shadow:inset 0 0 0 100px rgba(255,214,60,.45)}
   .sq.sel{box-shadow:inset 0 0 0 100px rgba(74,144,226,.55)}
   .sq.hint{box-shadow:inset 0 0 0 5px #9b59ff, inset 0 0 0 100px rgba(155,89,255,.25)}
+  .sq.bad{box-shadow:inset 0 0 0 5px var(--red), inset 0 0 0 100px rgba(232,80,91,.25)}
+  .sq.good{box-shadow:inset 0 0 0 5px var(--green), inset 0 0 0 100px rgba(63,174,90,.3)}
   .sq.check{background:radial-gradient(circle,#ff4d4d 0%,#ff4d4d55 55%,transparent 75%)}
   .sq .coord{position:absolute;font-size:.6rem;opacity:.6;left:3px;bottom:1px}
-  .piece{font-family:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif;font-size:min(10vw,52px);line-height:1;pointer-events:none;transition:transform .15s}
+  .piece{font-family:var(--pf);font-size:min(10vw,52px);line-height:1;pointer-events:none;transition:transform .15s}
   .piece.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 2px 2px #0006}
   .piece.b{color:#222;text-shadow:0 1px 1px #fff8}
   .sq.sel .piece{transform:scale(1.15)}
@@ -50,22 +53,38 @@
   .btn.orange{background:var(--accent);box-shadow:0 4px 0 #d96a22}
   .btn.green{background:var(--green);box-shadow:0 4px 0 #2b8442}
   .btn.purple{background:#9b59ff;box-shadow:0 4px 0 #7337d6}
-  .captured{font-family:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif;min-height:28px;font-size:1.4rem;letter-spacing:2px}
-  .menu{display:grid;gap:14px;margin-top:8px}
-  .menu .btn{font-size:1.3rem;padding:20px;text-align:left;display:flex;align-items:center;gap:14px}
-  .menu .btn span{font-size:2rem}
-  .lessons{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .lesson{background:#fff;border-radius:16px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 4px 0 #e6d3b0;border:none;font-family:inherit;color:inherit}
-  .lesson .g{font-size:2.6rem;font-family:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif}
-  .lesson .n{font-weight:800;font-size:1.05rem}
-  .lesson .s{font-size:1rem;min-height:1.2em}
-  .stats{text-align:center;font-size:1.05rem}
+  .btn.red{background:var(--red);box-shadow:0 4px 0 #b83640}
+  .btn:disabled{opacity:.5}
+  .captured{font-family:var(--pf);min-height:28px;font-size:1.4rem;letter-spacing:2px}
+  .menu{display:grid;gap:12px;margin-top:4px}
+  .menu .btn{font-size:1.25rem;padding:18px;text-align:left;display:flex;align-items:center;gap:14px}
+  .menu .btn span{font-size:1.9rem}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .card{background:#fff;border-radius:16px;padding:12px 8px;text-align:center;cursor:pointer;box-shadow:0 4px 0 #e6d3b0;border:none;font-family:inherit;color:inherit}
+  .card .g{font-size:2.4rem;font-family:var(--pf)}
+  .card .n{font-weight:800;font-size:1.02rem}
+  .card .s{font-size:.95rem;min-height:1.2em;opacity:.85}
+  .plist{display:grid;gap:10px}
+  .plist .card{display:flex;align-items:center;gap:12px;text-align:left;padding:14px}
+  .plist .card .g{font-family:inherit;font-size:2rem}
+  .bar{height:10px;background:#eee;border-radius:6px;overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--green)}
+  .stats{text-align:center;font-size:1.02rem;line-height:1.6}
   .hidden{display:none!important}
   .confetti{position:fixed;top:-40px;font-size:2rem;pointer-events:none;animation:fall 2.2s linear forwards;z-index:9}
   @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
-  .levelrow{display:flex;gap:6px;justify-content:center;align-items:center;font-weight:700}
-  .levelrow button{border:none;border-radius:10px;padding:8px 12px;font-family:inherit;font-weight:700;cursor:pointer;background:#fff;box-shadow:0 3px 0 #e6d3b0}
+  .levelrow{display:flex;gap:6px;justify-content:center;align-items:center;font-weight:700;flex-wrap:wrap}
+  .levelrow button{border:none;border-radius:10px;padding:8px 10px;font-family:inherit;font-weight:700;cursor:pointer;background:#fff;box-shadow:0 3px 0 #e6d3b0;font-size:.92rem}
   .levelrow button.on{background:var(--green);color:#fff;box-shadow:0 3px 0 #2b8442}
+  .think{background:#fff3c4;border-radius:12px;padding:8px 12px;text-align:center;font-weight:700;font-size:.98rem}
+  .toggle{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.95rem}
+  .review{display:grid;gap:6px;max-height:280px;overflow:auto;background:#fff;border-radius:14px;padding:8px;box-shadow:0 3px 0 #e6d3b0}
+  .rv{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;border:none;background:#faf5ea;font-family:inherit;font-size:1rem;text-align:left;color:inherit}
+  .rv.on{outline:3px solid var(--blue)}
+  .rv b{min-width:2.2em}
+  .summary{display:flex;justify-content:space-around;background:#fff;border-radius:14px;padding:10px;box-shadow:0 3px 0 #e6d3b0;font-weight:700;text-align:center}
+  .summary div span{display:block;font-size:1.5rem}
+  .sectitle{font-weight:800;font-size:1.1rem;margin:6px 2px 0}
 </style>
 </head>
 <body>
@@ -83,33 +102,51 @@
 
   <!-- Trang chủ -->
   <section id="home" class="menu">
-    <button class="btn orange" data-go="learn"><span>📚</span> Học từng quân cờ</button>
+    <button class="btn purple" data-go="daily"><span>🗓️</span> Câu đố hôm nay</button>
     <button class="btn green" data-go="bot"><span>🤖</span> Chơi với máy</button>
+    <button class="btn orange" data-go="puzzles"><span>🧩</span> Luyện câu đố</button>
+    <button class="btn" data-go="learn"><span>📚</span> Học từng quân cờ</button>
     <button class="btn" data-go="two"><span>👫</span> Hai người chơi</button>
     <div class="stats" id="stats"></div>
   </section>
 
   <!-- Danh sách bài học -->
-  <section id="lessonList" class="hidden">
-    <div class="lessons" id="lessons"></div>
-  </section>
+  <section id="lessonList" class="hidden"><div class="grid3" id="lessons"></div></section>
+
+  <!-- Danh sách câu đố -->
+  <section id="puzzleList" class="hidden"><div class="plist" id="plist"></div></section>
 
   <!-- Bàn cờ -->
-  <section id="boardWrap" class="hidden">
-    <div class="levelrow" id="levelRow">Máy:
-      <button data-lv="1">😊 Dễ</button><button data-lv="2">🙂 Vừa</button>
-    </div>
+  <section id="boardWrap" class="hidden" style="display:flex;flex-direction:column;gap:8px">
+    <div class="levelrow" id="levelRow"></div>
+    <div class="toggle" id="coachRow"><label><input type="checkbox" id="coachChk" checked> Cú nhắc khi quân bị dọa</label></div>
     <div class="captured" id="capTop"></div>
     <div class="board" id="board"></div>
     <div class="captured" id="capBottom"></div>
+    <div class="think" id="thinkBox">🛑 Trước khi đi, tự hỏi: Chiếu được không? Ăn được gì không? Máy đang dọa gì?</div>
     <div class="controls" id="playControls">
       <button class="btn purple" id="hintBtn">💡 Gợi ý</button>
       <button class="btn orange" id="undoBtn">↩️ Đi lại</button>
       <button class="btn green" id="newBtn">🔄 Ván mới</button>
+      <button class="btn red hidden" id="reviewBtn">📊 Xem lại ván</button>
     </div>
     <div class="controls hidden" id="learnControls">
       <button class="btn orange" id="retryBtn">🔄 Làm lại</button>
       <button class="btn" id="backLessons">📚 Các bài học</button>
+    </div>
+    <div class="controls hidden" id="puzzleControls">
+      <button class="btn purple" id="pHintBtn">💡 Gợi ý</button>
+      <button class="btn orange" id="pRetryBtn">🔄 Làm lại</button>
+      <button class="btn green" id="pNextBtn">➡️ Câu tiếp</button>
+    </div>
+    <div id="reviewPane" class="hidden" style="display:grid;gap:8px">
+      <div class="summary" id="summary"></div>
+      <div class="controls">
+        <button class="btn orange" id="rvPrev">⬅️ Lỗi trước</button>
+        <button class="btn orange" id="rvNext">Lỗi tiếp ➡️</button>
+        <button class="btn green" id="rvDone">🔄 Ván mới</button>
+      </div>
+      <div class="review" id="reviewList"></div>
     </div>
   </section>
 </main>
@@ -3485,10 +3522,12 @@ class Chess {
 
 
 </script>
+<script src="puzzles.js"></script>
 <script>
+{
 // ====== Dữ liệu ======
 const NAMES={p:'Tốt',n:'Mã',b:'Tượng',r:'Xe',q:'Hậu',k:'Vua'};
-const GLYPH={k:'♚\uFE0E',q:'♛\uFE0E',r:'♜\uFE0E',b:'♝\uFE0E',n:'♞\uFE0E',p:'♟\uFE0E'};
+const GLYPH={k:'♚︎',q:'♛︎',r:'♜︎',b:'♝︎',n:'♞︎',p:'♟︎'};
 const VAL={p:1,n:3,b:3,r:5,q:9,k:100};
 const HOW={
   p:'Tốt đi thẳng về phía trước 1 ô. Lần đầu tiên được đi 2 ô. Nhưng khi ăn quân thì Tốt ăn chéo.',
@@ -3506,10 +3545,25 @@ const LESSONS=[
   {t:'n',start:'b1',rounds:[['c3','d5','f6'],['a3','c4','e5','g6']]},
   {t:'p',start:'e2',rounds:[['e4','e5','e6'],['e4','e5','e6','e7','e8']]}
 ];
+const LEVELS=[
+  {name:'😊 Dễ',kind:'own',noise:12,random:.3},
+  {name:'🙂 Vừa',kind:'own',noise:3,random:0},
+  {name:'😎 Khá',kind:'sf',skill:0,depth:2},
+  {name:'💪 Giỏi',kind:'sf',skill:4,depth:5},
+  {name:'🏆 Cao thủ',kind:'sf',skill:10,depth:9}
+];
+const THEMES={
+  mate1:{title:'Chiếu hết trong 1 nước',icon:'⭐',ask:'Tìm nước chiếu hết ngay trong 1 nước!'},
+  capture:{title:'Ăn quân miễn phí',icon:'⭐⭐',ask:'Có một quân của đối phương ăn được mà không mất gì. Con tìm đi!'},
+  fork:{title:'Đòn đôi',icon:'⭐⭐',ask:'Tìm nước tấn công 2 quân cùng lúc!'},
+  mate2:{title:'Chiếu hết trong 2 nước',icon:'⭐⭐⭐',ask:'Khó đây! Tìm cách chiếu hết trong 2 nước.'}
+};
+const PUZ=(window.PUZZLES||[]).map((p,i)=>Object.assign({id:i},p));
 const FILES='abcdefgh';
+const $=id=>document.getElementById(id);
 
 // ====== Lưu tiến độ ======
-let progress={lessons:{},wins:0,games:0};
+let progress={lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true};
 try{const s=JSON.parse(localStorage.getItem('covua-progress'));if(s)progress=Object.assign(progress,s)}catch(e){}
 function save(){try{localStorage.setItem('covua-progress',JSON.stringify(progress))}catch(e){}}
 
@@ -3517,25 +3571,18 @@ function save(){try{localStorage.setItem('covua-progress',JSON.stringify(progres
 let voiceOn=true;
 try{voiceOn=localStorage.getItem('covua-voice')!=='off'}catch(e){}
 let viVoice=null;
-function pickVoice(){
-  if(!('speechSynthesis' in window))return;
-  const vs=speechSynthesis.getVoices();
-  viVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith('vi'))||null;
-}
+function pickVoice(){if(!('speechSynthesis' in window))return;const vs=speechSynthesis.getVoices();viVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith('vi'))||null}
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 function speak(text){
   if(!voiceOn||!('speechSynthesis' in window))return;
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text.replace(/[⭐🎉👏💡🦉😊🙂❤️]/gu,''));
-  u.lang='vi-VN'; if(viVoice)u.voice=viVoice; u.rate=0.95; u.pitch=1.15;
-  speechSynthesis.speak(u);
+  try{speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text.replace(/\p{Extended_Pictographic}/gu,''));
+    u.lang='vi-VN';if(viVoice)u.voice=viVoice;u.rate=.95;u.pitch=1.15;speechSynthesis.speak(u)}catch(e){}
 }
-const $=id=>document.getElementById(id);
 function updateVoiceBtn(){$('voiceBtn').textContent=voiceOn?'🔊':'🔇'}
 $('voiceBtn').onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem('covua-voice',voiceOn?'on':'off')}catch(e){}
-  updateVoiceBtn(); if(!voiceOn&&'speechSynthesis' in window)speechSynthesis.cancel(); else speak('Cú Mèo sẽ đọc cho con nghe nhé!')};
+  updateVoiceBtn();if(!voiceOn&&'speechSynthesis' in window)speechSynthesis.cancel();else speak('Cú Mèo sẽ đọc cho con nghe nhé!')};
 updateVoiceBtn();
-
 let actx=null;
 function beep(freq=520,dur=.08,type='sine',vol=.15){
   try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
@@ -3547,7 +3594,6 @@ const sfx={move:()=>beep(440,.07,'triangle'),capture:()=>{beep(300,.1,'square',.
   win:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle'),i*130)),
   star:()=>{beep(880,.08);setTimeout(()=>beep(1175,.12),80)},bad:()=>beep(180,.2,'sawtooth',.06)};
 
-// ====== Cú Mèo nói ======
 function say(text,{voice=true,happy=false}={}){
   $('bubble').textContent=text;
   if(happy){const o=$('owl');o.classList.remove('happy');void o.offsetWidth;o.classList.add('happy')}
@@ -3560,34 +3606,78 @@ function confetti(){
     document.body.appendChild(s);setTimeout(()=>s.remove(),3200)}
 }
 
+// ====== Stockfish (chạy trong Web Worker) ======
+const Engine={
+  w:null,failed:false,q:Promise.resolve(),waiter:null,lines:[],
+  init(){
+    if(this.w||this.failed)return;
+    try{this.w=new Worker('engine/stockfish-19-lite-single.js');
+      this.w.onmessage=e=>{const l=typeof e.data==='string'?e.data:'';
+        if(this.waiter&&this.waiter.re.test(l)){const w=this.waiter;this.waiter=null;const out=this.lines;this.lines=[];out.push(l);w.res(out)}
+        else this.lines.push(l)};
+      this.w.onerror=()=>{this.failed=true;if(this.waiter){const w=this.waiter;this.waiter=null;w.rej('engine error')}};
+      this.w.postMessage('uci');
+    }catch(e){this.failed=true}
+  },
+  run(cmds,re,ms=20000){
+    this.init();
+    if(this.failed||!this.w)return Promise.reject('no engine');
+    const p=this.q.then(()=>new Promise((res,rej)=>{
+      this.lines=[];this.waiter={re,res,rej};cmds.forEach(c=>this.w.postMessage(c));
+      setTimeout(()=>{if(this.waiter&&this.waiter.res===res){this.waiter=null;this.w.postMessage('stop');rej('timeout')}},ms);
+    }));
+    this.q=p.catch(()=>{});return p;
+  },
+  async analyse(fen,{depth=10,skill=20,multipv=1}={}){
+    const out=await this.run(['setoption name Skill Level value '+skill,'setoption name MultiPV value '+multipv,'position fen '+fen,'go depth '+depth],/^bestmove/);
+    let score=null,pv=[];
+    for(const l of out){const m=l.match(/score (cp|mate) (-?\d+).*? pv (.+)$/);if(m&&/multipv 1 /.test(l+' ')||m&&!/multipv/.test(l)){score={[m[1]]:+m[2]};pv=m[3].split(' ')}}
+    const bm=(out[out.length-1].match(/^bestmove (\S+)/)||[])[1];
+    return {best:bm&&bm!=='(none)'?bm:null,score,pv};
+  }
+};
+const cpOf=s=>!s?0:s.mate!==undefined?(s.mate>0?1000-s.mate:-1000-s.mate):Math.max(-1000,Math.min(1000,s.cp));
+
 // ====== Điều hướng ======
 let view='home';
 function show(v){
   view=v;
   $('home').classList.toggle('hidden',v!=='home');
   $('lessonList').classList.toggle('hidden',v!=='lessonList');
-  $('boardWrap').classList.toggle('hidden',!(v==='bot'||v==='two'||v==='lesson'));
-  $('playControls').classList.toggle('hidden',v==='lesson');
+  $('puzzleList').classList.toggle('hidden',v!=='puzzleList');
+  const onBoard=['bot','two','lesson','puzzle','review'].includes(v);
+  $('boardWrap').classList.toggle('hidden',!onBoard);
+  $('playControls').classList.toggle('hidden',!(v==='bot'||v==='two'));
   $('learnControls').classList.toggle('hidden',v!=='lesson');
+  $('puzzleControls').classList.toggle('hidden',v!=='puzzle');
+  $('reviewPane').classList.toggle('hidden',v!=='review');
   $('levelRow').classList.toggle('hidden',v!=='bot');
+  $('coachRow').classList.toggle('hidden',v!=='bot');
+  $('thinkBox').classList.toggle('hidden',v!=='bot');
   $('hintBtn').classList.toggle('hidden',v!=='bot');
+  $('reviewBtn').classList.add('hidden');
+  if(v==='lesson'||v==='puzzle'){$('capTop').textContent='';$('capBottom').textContent=''}
   window.scrollTo(0,0);
 }
+function solvedCount(){return Object.keys(progress.solved).length}
 function goHome(){
   show('home');
-  $('stats').textContent=`⭐ Bài đã học: ${Object.keys(progress.lessons).length}/${LESSONS.length}   🏆 Thắng máy: ${progress.wins} ván`;
-  say('Chào con! Mình là Cú Mèo. Hôm nay con muốn học quân cờ hay chơi một ván nào?');
+  const today=todayKey(), d=progress.daily[today]||[];
+  $('stats').innerHTML=`🧩 Câu đố đã giải: <b>${solvedCount()}</b>/${PUZ.length} &nbsp; 🗓️ Hôm nay: <b>${d.length}</b>/5<br>`+
+    `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}`;
+  say(d.length>=5?'Con đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?':'Chào con! Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!');
 }
 $('homeBtn').onclick=goHome;
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
-  const g=b.dataset.go; if(g==='learn')openLessons(); else startGame(g);
+  const g=b.dataset.go;
+  if(g==='learn')openLessons(); else if(g==='puzzles')openPuzzleList(); else if(g==='daily')startDaily(); else startGame(g);
 });
 
 // ====== Vẽ bàn cờ chung ======
 function drawBoard(cells){
   const el=$('board');el.innerHTML='';
   for(let r=8;r>=1;r--)for(let f=0;f<8;f++){
-    const sq=FILES[f]+r, c=cells(sq)||{};
+    const sq=FILES[f]+r,c=cells(sq)||{};
     const d=document.createElement('div');
     d.className='sq '+((f+r)%2===0?'l':'d')+(c.cls?' '+c.cls:'');
     d.dataset.sq=sq;
@@ -3599,72 +3689,95 @@ function drawBoard(cells){
   }
 }
 $('board').addEventListener('click',e=>{
-  const s=e.target.closest('.sq'); if(!s)return;
-  if(view==='lesson')lessonClick(s.dataset.sq); else gameClick(s.dataset.sq);
+  const s=e.target.closest('.sq');if(!s)return;
+  if(view==='lesson')lessonClick(s.dataset.sq);
+  else if(view==='puzzle')puzzleClick(s.dataset.sq);
+  else if(view==='bot'||view==='two')gameClick(s.dataset.sq);
 });
-
-// ====== Chơi cờ ======
-let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,level=1;
-function startGame(m){
-  mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;
-  show(m);renderGame();
-  if(m==='bot')say('Con cầm quân Trắng và đi trước nhé. Chạm vào một quân để xem nó đi thế nào. Bí quá thì bấm Gợi ý!');
-  else say('Hai bạn chơi cùng nhau nhé! Bên Trắng đi trước.');
-  setLevelButtons();
-}
-function setLevelButtons(){document.querySelectorAll('[data-lv]').forEach(b=>b.classList.toggle('on',+b.dataset.lv===level))}
-document.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;setLevelButtons();
-  say(level===1?'Máy sẽ chơi dễ thôi.':'Máy sẽ chơi cẩn thận hơn đó. Cố lên con!')});
-
-function kingSquare(color){
-  for(const row of game.board())for(const p of row)if(p&&p.type==='k'&&p.color===color)return p.square;
-}
-function renderGame(){
-  const targets=selected?game.moves({square:selected,verbose:true}):[];
-  const chk=game.inCheck()?kingSquare(game.turn()):null;
-  drawBoard(sq=>{
-    const p=game.get(sq), c={piece:p||null,cls:''};
-    if(lastMove&&(sq===lastMove.from||sq===lastMove.to))c.cls+=' last';
-    if(hint&&(sq===hint.from||sq===hint.to))c.cls+=' hint';
+function kingSq(g,color){for(const row of g.board())for(const p of row)if(p&&p.type==='k'&&p.color===color)return p.square}
+function boardCells(g,{selected,marks={}}={}){
+  const targets=selected?g.moves({square:selected,verbose:true}):[];
+  const chk=g.inCheck()?kingSq(g,g.turn()):null;
+  return sq=>{
+    const c={piece:g.get(sq)||null,cls:marks[sq]||''};
     if(sq===selected)c.cls+=' sel';
     if(sq===chk)c.cls+=' check';
-    const t=targets.find(m=>m.to===sq); if(t){c.target=true;c.capture=!!t.captured}
+    const t=targets.find(m=>m.to===sq);if(t){c.target=true;c.capture=!!t.captured}
     return c;
+  };
+}
+const uciMove=u=>({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});
+function describe(g,u){ // mô tả nước đi bằng lời, trên thế cờ g (chưa đi)
+  const p=g.get(u.slice(0,2)),t=g.get(u.slice(2,4));
+  if(!p)return u;
+  return `${NAMES[p.type]} ${u.slice(0,2)} đến ${u.slice(2,4)}`+(t?` (ăn ${NAMES[t.type]})`:'');
+}
+
+// ====== Mối đe dọa (dùng cho lời nhắc) ======
+function threats(g){
+  const best={};
+  for(const m of g.moves({verbose:true})){
+    if(!m.captured)continue;
+    g.move(m);const recap=g.moves({verbose:true}).some(x=>x.to===m.to);g.undo();
+    const gain=VAL[m.captured]-(recap?VAL[m.piece]:0);
+    if(gain>0&&(!best[m.to]||best[m.to].gain<gain))best[m.to]={sq:m.to,gain};
+  }
+  return Object.values(best).sort((a,b)=>b.gain-a.gain);
+}
+function flipped(g){
+  if(g.inCheck())return null;
+  const f=g.fen().split(' ');f[1]=f[1]==='w'?'b':'w';f[3]='-';
+  try{return new Chess(f.join(' '))}catch(e){return null}
+}
+
+// ====== Chơi cờ ======
+let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0;
+function renderLevels(){
+  $('levelRow').innerHTML='Máy: '+LEVELS.map((l,i)=>`<button data-lv="${i}" class="${i===progress.level?'on':''}">${l.name}</button>`).join('');
+  $('levelRow').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const lv=+b.dataset.lv;
+    if(game&&game.history().length>0&&!game.isGameOver()){say('Mức mới sẽ áp dụng từ ván sau nhé.')}
+    progress.level=lv;save();renderLevels();
+    if(!game||game.history().length===0||game.isGameOver()){startedLevel=lv;say(['Máy sẽ chơi dễ thôi.','Máy sẽ cẩn thận hơn.','Mức Khá: máy bắt đầu biết bẫy rồi đó!','Mức Giỏi: con phải nghĩ thật kỹ!','Mức Cao thủ: thử thách lớn đây!'][lv])}
   });
-  // quân bị ăn
+}
+$('coachChk').onchange=e=>{progress.coach=e.target.checked;save();
+  say(progress.coach?'Cú sẽ nhắc khi quân của con bị dọa.':'Cú sẽ im lặng để con tự nghĩ. Nhớ tự hỏi 3 câu trước khi đi nhé!')};
+function startGame(m){
+  mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;startedLevel=progress.level;
+  show(m);renderLevels();$('coachChk').checked=!!progress.coach;renderGame();
+  if(m==='bot'){Engine.init();say('Con cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!')}
+  else say('Hai bạn chơi cùng nhau nhé! Bên Trắng đi trước.');
+}
+function renderGame(){
+  const marks={};
+  if(lastMove){marks[lastMove.from]='last';marks[lastMove.to]='last'}
+  if(hint){marks[hint.from]='hint';marks[hint.to]='hint'}
+  drawBoard(boardCells(game,{selected,marks}));
   const count={w:{},b:{}};
   for(const m of game.history({verbose:true}))if(m.captured){const col=m.color==='w'?'b':'w';count[col][m.captured]=(count[col][m.captured]||0)+1}
   const fmt=col=>['q','r','b','n','p'].map(t=>GLYPH[t].repeat(count[col][t]||0)).join('');
-  $('capTop').textContent=fmt('w');   // quân trắng bị ăn (máy đã ăn)
-  $('capBottom').textContent=fmt('b');// quân đen bị ăn (con đã ăn)
+  $('capTop').textContent=fmt('w');$('capBottom').textContent=fmt('b');
   $('capTop').style.color='#999';$('capBottom').style.color='#222';
 }
 const sideName=c=>mode==='bot'?(c==='w'?'con':'máy'):(c==='w'?'bên Trắng':'bên Đen');
-
 function gameClick(sq){
   if(busy||game.isGameOver())return;
   const turn=game.turn();
   if(mode==='bot'&&turn!=='w')return;
   const p=game.get(sq);
-  if(selected){
-    const mv=game.moves({square:selected,verbose:true}).find(m=>m.to===sq);
-    if(mv){doMove(mv);return}
-  }
+  if(selected){const mv=game.moves({square:selected,verbose:true}).find(m=>m.to===sq);if(mv){doMove(mv);return}}
   if(p&&p.color===turn){
     selected=sq;hint=null;renderGame();
     const legal=game.moves({square:sq,verbose:true});
-    let txt='Đây là quân '+NAMES[p.type]+'. '+HOW[p.type];
-    if(!legal.length)txt='Quân '+NAMES[p.type]+' này đang bị chắn, chưa đi được. Con chọn quân khác nhé.';
+    let txt='Quân '+NAMES[p.type]+'. '+HOW[p.type];
+    if(!legal.length)txt='Quân '+NAMES[p.type]+' này đang bị chắn, chưa đi được.';
     else if(game.inCheck())txt='Vua đang bị chiếu! Các chấm xanh là những nước cứu được Vua.';
-    say(txt,{voice:lastExplained!==p.type||!legal.length});
+    say(txt,{voice:(lastExplained!==p.type&&progress.level<2)||!legal.length||game.inCheck()});
     lastExplained=p.type;
-  }else if(p){
-    say('Đó là quân '+NAMES[p.type]+' của '+sideName(p.color)+'. '+(mode==='bot'?'Con chọn quân màu trắng của mình nhé.':'Chưa đến lượt bên đó đâu.'));
-  }else if(selected){
-    say('Quân '+NAMES[game.get(selected).type]+' không đi đến ô đó được. Con chạm vào chấm xanh nhé.');sfx.bad();
-  }
+  }else if(p){say('Đó là quân '+NAMES[p.type]+' của '+sideName(p.color)+'.',{voice:false})}
+  else if(selected){say('Quân '+NAMES[game.get(selected).type]+' không đi đến ô đó được.');sfx.bad()}
 }
-
 function doMove(mv){
   const res=game.move({from:mv.from,to:mv.to,promotion:'q'});
   selected=null;hint=null;lastMove=res;
@@ -3673,89 +3786,79 @@ function doMove(mv){
   if(endCheck())return;
   if(mode==='bot'){
     let msg=praise(res);
-    const danger=threats(game); // máy sắp có thể ăn gì
+    const danger=progress.coach?threats(game):[];
     if(danger.length){const d=danger[0];msg+=` Ôi, quân ${NAMES[game.get(d.sq).type]} của con ở ${d.sq} có thể bị ăn mất. Con có thể bấm Đi lại.`}
-    say(msg.trim()||'Máy đang suy nghĩ...');
-    busy=true;setTimeout(botTurn,danger.length?1600:900);
-  }else{
-    say((praise(res)+' Đến lượt '+sideName(game.turn())+'.').trim());
-  }
+    say(msg.trim()||'Máy đang suy nghĩ...',{voice:!!msg.trim()});
+    busy=true;setTimeout(botTurn,danger.length?1500:500);
+  }else say((praise(res)+' Đến lượt '+sideName(game.turn())+'.').trim());
 }
 function praise(m){
   let s='';
-  if(m.flags.includes('k')||m.flags.includes('q'))s+='Nhập thành rồi! Vua được Xe che chắn an toàn hơn. ';
+  if(m.flags.includes('k')||m.flags.includes('q'))s+='Nhập thành rồi! Vua an toàn hơn. ';
   if(m.captured)s+=['Giỏi lắm!','Tuyệt vời!','Hay quá!'][Math.floor(Math.random()*3)]+` Ăn được quân ${NAMES[m.captured]} rồi. `;
   if(m.promotion)s+='Tốt đi đến hàng cuối và biến thành Hậu! ';
-  if(m.san.includes('+'))s+='Chiếu! Vua bên kia đang bị tấn công. ';
+  if(m.san.includes('+'))s+='Chiếu! ';
   return s;
-}
-
-// Những quân của bên KHÔNG đến lượt mà bên đến lượt có thể ăn có lời
-function threats(g){
-  const best={};
-  for(const m of g.moves({verbose:true})){
-    if(!m.captured)continue;
-    g.move(m);
-    const recap=g.moves({verbose:true}).some(x=>x.to===m.to);
-    g.undo();
-    const gain=VAL[m.captured]-(recap?VAL[m.piece]:0);
-    if(gain>0&&(!best[m.to]||best[m.to].gain<gain))best[m.to]={sq:m.to,gain};
-  }
-  return Object.values(best).sort((a,b)=>b.gain-a.gain);
-}
-// Đổi lượt đi (để xem bên kia đang dọa gì)
-function flipped(g){
-  if(g.inCheck())return null;
-  const f=g.fen().split(' ');f[1]=f[1]==='w'?'b':'w';f[3]='-';
-  try{return new Chess(f.join(' '))}catch(e){return null}
 }
 function scoreMove(m,noise){
   game.move(m);
   let s=0;
-  if(game.isCheckmate())s+=1000;
-  else if(game.isDraw())s-=40;
+  if(game.isCheckmate())s+=1000;else if(game.isDraw())s-=40;
   if(m.captured)s+=VAL[m.captured]*10;
   if(m.promotion)s+=80;
   if(m.san.includes('+'))s+=3;
-  const t=threats(game); if(t.length)s-=t[0].gain*9;
+  const t=threats(game);if(t.length)s-=t[0].gain*9;
   game.undo();
-  // khuyến khích ra quân và chiếm trung tâm
   if('de'.includes(m.to[0])&&'45'.includes(m.to[1]))s+=2;
   if((m.piece==='n'||m.piece==='b')&&(m.from[1]==='1'||m.from[1]==='8'))s+=2;
   if(m.piece==='k'&&!m.flags.includes('k')&&!m.flags.includes('q'))s-=3;
   return s+Math.random()*noise;
 }
-function botTurn(){
+function ownBotMove(lv){
   const moves=game.moves({verbose:true});
-  let pick;
-  if(level===1&&Math.random()<0.3)pick=moves[Math.floor(Math.random()*moves.length)];
-  else{let bs=-1e9;for(const m of moves){const s=scoreMove(m,level===1?12:3);if(s>bs){bs=s;pick=m}}}
-  const res=game.move({from:pick.from,to:pick.to,promotion:'q'});
+  if(Math.random()<lv.random)return moves[Math.floor(Math.random()*moves.length)];
+  let pick,bs=-1e9;for(const m of moves){const s=scoreMove(m,lv.noise);if(s>bs){bs=s;pick=m}}
+  return pick;
+}
+async function botTurn(){
+  const lv=LEVELS[startedLevel];
+  let mv=null;
+  if(lv.kind==='sf'){
+    try{const a=await Engine.analyse(game.fen(),{skill:lv.skill,depth:lv.depth});if(a.best)mv=uciMove(a.best)}
+    catch(e){}
+    await new Promise(r=>setTimeout(r,250));
+  }
+  if(!mv)mv=ownBotMove(LEVELS[1]&&lv.kind==='sf'?LEVELS[1]:lv);
+  const res=game.move({from:mv.from,to:mv.to,promotion:mv.promotion||'q'});
   lastMove=res;busy=false;
   res.captured?sfx.capture():sfx.move();
   renderGame();
   if(endCheck())return;
-  let msg=`Máy đi quân ${NAMES[res.piece]} đến ${res.to}.`;
-  if(res.captured)msg+=` Máy ăn mất quân ${NAMES[res.captured]} của con rồi.`;
-  if(game.inCheck())msg+=' Cẩn thận! Vua của con đang bị chiếu. Con phải cứu Vua: chạy đi, chặn lại, hoặc ăn quân đang chiếu.';
-  else{
-    const f=flipped(game), d=f?threats(f):[];
-    if(d.length)msg+=` Quân ${NAMES[game.get(d[0].sq).type]} của con ở ${d[0].sq} đang bị dọa. Con nên chạy đi hoặc bảo vệ nó.`;
-    else{const o=threats(game);if(o.length&&Math.random()<0.6)msg+=' Gợi ý nhỏ: có quân của máy đang không được bảo vệ đó!';}
+  let msg=`Máy đi ${NAMES[res.piece]} đến ${res.to}.`;
+  if(res.captured)msg+=` Máy ăn quân ${NAMES[res.captured]} của con.`;
+  if(game.inCheck())msg+=' Vua của con đang bị chiếu! Chạy Vua, chặn lại, hoặc ăn quân đang chiếu.';
+  else if(progress.coach){
+    const f=flipped(game),d=f?threats(f):[];
+    if(d.length)msg+=` Quân ${NAMES[game.get(d[0].sq).type]} của con ở ${d[0].sq} đang bị dọa.`;
   }
-  say(msg);
+  say(msg,{voice:progress.level<3||game.inCheck()||!!res.captured});
 }
 function endCheck(){
   if(!game.isGameOver())return false;
   progress.games++;
   if(game.isCheckmate()){
     const loser=game.turn();
-    if(mode==='bot'&&loser==='b'){progress.wins++;say('Chiếu hết! Con thắng rồi! Cú Mèo tự hào về con quá!',{happy:true});confetti();sfx.win()}
-    else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con, thua là để học. Mình chơi ván mới nhé!');
+    if(mode==='bot'&&loser==='b'){
+      progress.wins++;progress.levelWins[startedLevel]=(progress.levelWins[startedLevel]||0)+1;
+      const next=startedLevel<LEVELS.length-1&&progress.levelWins[startedLevel]>=2?` Con đã thắng mức này ${progress.levelWins[startedLevel]} lần, thử mức ${LEVELS[startedLevel+1].name.split(' ')[1]} xem!`:'';
+      say('Chiếu hết! Con thắng rồi!'+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
+    }else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con! Bấm Xem lại ván để tìm xem mình sai ở đâu nhé.');
     else{say(`Chiếu hết! ${loser==='w'?'Bên Đen':'Bên Trắng'} thắng rồi!`,{happy:true});confetti();sfx.win()}
-  }else if(game.isStalemate())say('Hết cờ! Bên đến lượt không còn nước đi mà Vua không bị chiếu, nên ván này hòa.');
-  else say('Ván cờ hòa rồi! Hai bên chơi giỏi ngang nhau.');
-  save();renderGame();return true;
+  }else if(game.isStalemate())say('Hết nước đi mà Vua không bị chiếu, nên ván này hòa. Lần sau khi đang thắng, nhớ chừa đường cho Vua bên kia nhé!');
+  else say('Ván cờ hòa rồi!');
+  save();renderGame();
+  if(mode==='bot')$('reviewBtn').classList.remove('hidden');
+  return true;
 }
 $('newBtn').onclick=()=>startGame(mode);
 $('undoBtn').onclick=()=>{
@@ -3763,61 +3866,239 @@ $('undoBtn').onclick=()=>{
   if(mode==='bot'){if(game.turn()==='w'&&game.history().length>=2){game.undo();game.undo()}else if(game.turn()==='b')game.undo()}
   else game.undo();
   const h=game.history({verbose:true});lastMove=h[h.length-1]||null;selected=null;hint=null;renderGame();
-  say('Mình đi lại nhé. Con suy nghĩ thật kỹ rồi đi.');
+  $('reviewBtn').classList.toggle('hidden',!(mode==='bot'&&game.history().length>=6));
+  say('Mình đi lại nhé. Suy nghĩ thật kỹ rồi đi.');
 };
-$('hintBtn').onclick=()=>{
+$('hintBtn').onclick=async()=>{
   if(busy||game.isGameOver()||game.turn()!=='w')return;
-  let best,bs=-1e9;
-  for(const m of game.moves({verbose:true})){const s=scoreMove(m,0.5);if(s>bs){bs=s;best=m}}
+  busy=true;say('Cú đang suy nghĩ...',{voice:false});
+  let u=null;
+  try{const a=await Engine.analyse(game.fen(),{depth:10});u=a.best}catch(e){}
+  busy=false;
+  let best=u?game.moves({verbose:true}).find(m=>m.from===u.slice(0,2)&&m.to===u.slice(2,4)):null;
+  if(!best){let bs=-1e9;for(const m of game.moves({verbose:true})){const s=scoreMove(m,.5);if(s>bs){bs=s;best=m}}}
   hint=best;selected=null;renderGame();
   game.move(best);const mate=game.isCheckmate();game.undo();
-  let why='đây là nước đi an toàn.';
-  if(mate)why='nước này chiếu hết luôn đó!';
-  else if(best.captured)why=`để ăn quân ${NAMES[best.captured]} của máy.`;
-  else if(best.san.includes('+'))why='để chiếu Vua của máy.';
-  else{const f=flipped(game),d=f?threats(f):[];if(d.some(x=>x.sq===best.from))why='để cứu quân này khỏi bị ăn.'}
-  say(`Cú gợi ý: thử đi quân ${NAMES[best.piece]} từ ${best.from} đến ${best.to}, ${why}`);
+  let why='Con thử nghĩ xem vì sao nước này hay nhé.';
+  if(mate)why='Nước này chiếu hết luôn đó!';
+  else if(best.captured)why=`Nước này ăn được quân ${NAMES[best.captured]}.`;
+  else if(best.san.includes('+'))why='Nước này chiếu Vua của máy.';
+  else{const f=flipped(game),d=f?threats(f):[];if(d.some(x=>x.sq===best.from))why='Nước này cứu quân đang bị dọa.'}
+  say(`Cú gợi ý: ${NAMES[best.piece]} từ ${best.from} đến ${best.to}. ${why}`);
+};
+
+// ====== Xem lại ván ======
+let RV=null;
+$('reviewBtn').onclick=reviewGame;
+async function reviewGame(){
+  const hist=game.history({verbose:true});
+  if(hist.length<2)return;
+  show('review');
+  $('summary').innerHTML='';$('reviewList').innerHTML='';
+  const g=new Chess(), fens=[g.fen()];
+  for(const m of hist){g.move(m);fens.push(g.fen())}
+  const evals=new Array(fens.length);
+  for(let i=0;i<fens.length;i++){
+    say(`Cú đang xem lại ván cờ... ${Math.round(i/fens.length*100)}%`,{voice:false});
+    const gg=new Chess(fens[i]);
+    if(gg.isCheckmate()){evals[i]={best:null,cp:-1000};continue}
+    if(gg.isDraw()){evals[i]={best:null,cp:0};continue}
+    try{const a=await Engine.analyse(fens[i],{depth:10});evals[i]={best:a.best,cp:cpOf(a.score),mate:a.score&&a.score.mate}}
+    catch(e){say('Máy phân tích chưa chạy được trên thiết bị này. Con thử lại sau nhé.');return}
+  }
+  const items=[];
+  for(let i=0;i<hist.length;i++){
+    const m=hist[i];if(m.color!=='w')continue;
+    const before=evals[i].cp, after=-evals[i+1].cp; // góc nhìn bên Trắng
+    const loss=Math.max(0,before-after);
+    const played=m.from+m.to+(m.promotion||'');
+    const isBest=evals[i].best&&evals[i].best.slice(0,4)===played.slice(0,4);
+    let cat;
+    if(evals[i].mate>0&&!(evals[i+1].mate<0||new Chess(fens[i+1]).isCheckmate()))cat='miss';
+    else if(isBest||loss<=25)cat='great';
+    else if(loss<=90)cat='good';
+    else if(loss<=220)cat='inacc';
+    else cat='blunder';
+    items.push({i,m,cat,best:evals[i].best,loss,before,after});
+  }
+  const CAT={great:['✨','Tuyệt vời'],good:['👍','Tốt'],inacc:['🤔','Chưa chuẩn'],blunder:['❗','Sai lầm'],miss:['🎯','Bỏ lỡ chiếu hết']};
+  const cnt=k=>items.filter(x=>x.cat===k).length;
+  $('summary').innerHTML=['great','good','inacc','blunder'].map(k=>`<div><span>${CAT[k][0]} ${cnt(k)+(k==='blunder'?cnt('miss'):0)}</span>${CAT[k][1]}</div>`).join('');
+  $('reviewList').innerHTML=items.map((x,j)=>`<button class="rv" data-j="${j}"><b>${Math.floor(x.i/2)+1}.</b> ${CAT[x.cat][0]} ${NAMES[x.m.piece]} ${x.m.from}→${x.m.to} <span style="margin-left:auto;opacity:.75">${CAT[x.cat][1]}</span></button>`).join('');
+  RV={items,fens,CAT,cur:-1};
+  $('reviewList').querySelectorAll('.rv').forEach(b=>b.onclick=()=>showReview(+b.dataset.j));
+  const mistakes=items.filter(x=>x.cat==='blunder'||x.cat==='miss'||x.cat==='inacc');
+  const goodPct=Math.round((cnt('great')+cnt('good'))/Math.max(1,items.length)*100);
+  say(`Xong rồi! ${goodPct}% nước đi của con là nước tốt. `+(mistakes.length?`Có ${mistakes.length} chỗ con có thể đi hay hơn. Bấm Lỗi tiếp để xem từng chỗ nhé.`:'Con chơi rất chắc chắn!'),{happy:goodPct>=70});
+  drawBoard(boardCells(new Chess(fens[fens.length-1])));
+}
+function showReview(j){
+  if(!RV||!RV.items[j])return;
+  RV.cur=j;const x=RV.items[j];
+  $('reviewList').querySelectorAll('.rv').forEach(b=>b.classList.toggle('on',+b.dataset.j===j));
+  const g=new Chess(RV.fens[x.i]);const marks={};
+  const bestU=x.best;
+  marks[x.m.from]='bad';marks[x.m.to]='bad';
+  if(bestU&&x.cat!=='great'){marks[bestU.slice(0,2)]='good';marks[bestU.slice(2,4)]='good'}
+  if(x.cat==='great'){marks[x.m.from]='good';marks[x.m.to]='good'}
+  drawBoard(boardCells(g,{marks}));
+  const n=Math.floor(x.i/2)+1;
+  let t=`Nước ${n}: con đi ${NAMES[x.m.piece]} ${x.m.from} đến ${x.m.to}. `;
+  if(x.cat==='great')t+='Đây là nước rất hay!';
+  else if(x.cat==='good')t+='Nước này ổn. '+(bestU?`Cú thích ${describe(g,bestU)} hơn một chút.`:'');
+  else if(x.cat==='miss')t+=`Ở đây con có thể chiếu hết! Nước ô xanh là ${describe(g,bestU)}.`;
+  else{
+    const g2=new Chess(RV.fens[x.i+1]);const t2=threats(g2);
+    t+=(x.cat==='blunder'?'Đây là sai lầm. ':'Nước này chưa chuẩn. ')+
+      (t2.length?`Sau nước này, quân ${NAMES[g2.get(t2[0].sq).type]} ở ${t2[0].sq} bị bỏ trống. `:'')+
+      (bestU?`Nước tốt hơn là ${describe(g,bestU)} (ô xanh).`:'');
+  }
+  say(t);
+}
+function jumpMistake(dir){
+  if(!RV)return;
+  const bad=RV.items.map((x,j)=>['blunder','miss','inacc'].includes(x.cat)?j:-1).filter(j=>j>=0);
+  if(!bad.length){say('Không có lỗi nào đáng kể. Giỏi quá!');return}
+  let k=dir>0?bad.find(j=>j>RV.cur):[...bad].reverse().find(j=>j<RV.cur);
+  if(k===undefined)k=dir>0?bad[0]:bad[bad.length-1];
+  showReview(k);
+  const el=$('reviewList').querySelector(`[data-j="${k}"]`);if(el)el.scrollIntoView({block:'nearest'});
+}
+$('rvNext').onclick=()=>jumpMistake(1);$('rvPrev').onclick=()=>jumpMistake(-1);
+$('rvDone').onclick=()=>startGame('bot');
+
+// ====== Câu đố ======
+let P=null; // {list,idx,g,step,sol,hints,failed,daily}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function hashStr(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function dailySet(){
+  const h=hashStr(todayKey());
+  const pick=(theme,n,off)=>{const pool=PUZ.filter(p=>theme.includes(p.theme));const out=[];for(let i=0;i<n&&pool.length;i++)out.push(pool[(h+off+i*7919)%pool.length]);return out};
+  return [...pick(['mate1'],2,0),...pick(['capture','fork'],2,13),...pick(['mate2'],1,29)];
+}
+function startDaily(){
+  if(!PUZ.length){say('Chưa có câu đố.');return}
+  const list=dailySet();const done=progress.daily[todayKey()]||[];
+  const idx=list.findIndex(p=>!done.includes(p.id));
+  startPuzzle(list,idx<0?0:idx,true);
+}
+function openPuzzleList(){
+  show('puzzleList');
+  const groups=[['mate1'],['capture'],['fork'],['mate2']];
+  $('plist').innerHTML=groups.map(gr=>{
+    const pool=PUZ.filter(p=>gr.includes(p.theme)),done=pool.filter(p=>progress.solved[p.id]).length,th=THEMES[gr[0]];
+    return `<button class="card" data-th="${gr[0]}"><div class="g">${th.icon.length>2?'🧠':th.icon==='⭐⭐'?'⚔️':'👑'}</div><div style="flex:1"><div class="n">${th.title} <small>${th.icon}</small></div><div class="s">${done}/${pool.length} câu</div><div class="bar"><i style="width:${pool.length?done/pool.length*100:0}%"></i></div></div></button>`;
+  }).join('');
+  $('plist').querySelectorAll('.card').forEach(b=>b.onclick=()=>{
+    const pool=PUZ.filter(p=>p.theme===b.dataset.th);
+    const idx=pool.findIndex(p=>!progress.solved[p.id]);
+    startPuzzle(pool,idx<0?0:idx,false);
+  });
+  say('Mỗi ngày giải vài câu, con sẽ nhìn ra nước hay nhanh hơn. Bắt đầu từ một sao rồi lên dần nhé!');
+}
+function startPuzzle(list,idx,daily){
+  const p=list[idx];
+  P={list,idx,daily,p,g:new Chess(p.fen),step:0,hints:0,failed:false,sel:null,done:false,last:null};
+  show('puzzle');renderPuzzle();
+  const tag=daily?`Câu đố hôm nay ${idx+1}/${list.length}. `:`${THEMES[p.theme].title} ${THEMES[p.theme].icon}. `;
+  say(tag+'Con cầm quân Trắng. '+THEMES[p.theme].ask);
+}
+function renderPuzzle(extra={}){
+  const marks=Object.assign({},extra);
+  if(P.last){marks[P.last.from]=marks[P.last.from]||'last';marks[P.last.to]=marks[P.last.to]||'last'}
+  drawBoard(boardCells(P.g,{selected:P.done?null:P.sel,marks}));
+}
+function puzzleClick(sq){
+  if(!P||P.done||P.busy)return;
+  const g=P.g,p=g.get(sq);
+  if(P.sel){const mv=g.moves({square:P.sel,verbose:true}).find(m=>m.to===sq);if(mv){puzzleMove(mv);return}}
+  if(p&&p.color==='w'){P.sel=sq;renderPuzzle()}else{P.sel=null;renderPuzzle()}
+}
+function puzzleMove(mv){
+  const g=P.g,p=P.p,sol=p.sol;
+  const u=mv.from+mv.to;
+  const res=g.move({from:mv.from,to:mv.to,promotion:'q'});P.sel=null;P.last=res;
+  let ok;
+  const isFinal=(p.theme==='mate2'?P.step===2:true);
+  if(p.theme==='mate1'||(p.theme==='mate2'&&P.step===2))ok=g.isCheckmate();
+  else ok=u===sol[P.step].slice(0,4);
+  if(!ok){
+    P.failed=true;sfx.bad();renderPuzzle({[mv.to]:'bad'});
+    say(['Chưa đúng rồi. ','Gần rồi, nhưng chưa phải. ','Thử lại nào! '][Math.floor(Math.random()*3)]+'Con nhìn xem có chiếu được không, có ăn được gì không?');
+    P.busy=true;setTimeout(()=>{g.undo();P.last=null;P.busy=false;renderPuzzle()},1100);return;
+  }
+  res.captured?sfx.capture():sfx.move();
+  if(p.theme==='mate2'&&P.step===0){
+    renderPuzzle({[mv.to]:'good'});P.busy=true;say('Đúng rồi! Giờ xem máy đỡ thế nào...',{voice:true});
+    setTimeout(()=>{const r=g.move(uciMove(sol[1]));P.last=r;P.step=2;P.busy=false;sfx.move();renderPuzzle();
+      say(`Máy đi ${NAMES[r.piece]} đến ${r.to}. Giờ con chiếu hết đi!`)},1000);
+    return;
+  }
+  // giải xong
+  P.done=true;renderPuzzle({[mv.to]:'good'});
+  const stars=P.failed?1:P.hints?2:3;
+  progress.solved[p.id]=Math.max(progress.solved[p.id]||0,stars);
+  if(P.daily){const k=todayKey();progress.daily[k]=progress.daily[k]||[];if(!progress.daily[k].includes(p.id))progress.daily[k].push(p.id)}
+  save();sfx.win();
+  let msg=(stars===3?'Xuất sắc! Đúng ngay lần đầu! ⭐⭐⭐':stars===2?'Giỏi lắm! ⭐⭐':'Làm được rồi! ⭐')+' ';
+  if(p.theme==='mate1'||p.theme==='mate2')msg+='Chiếu hết! Vua đối phương không còn đường chạy.';
+  else if(p.theme==='fork')msg+=`Quân ${NAMES[res.piece]} tấn công 2 quân cùng lúc, đối phương chỉ cứu được một!`;
+  else msg+=`Ăn được quân ${NAMES[res.captured||'p']} mà không bị mất gì.`;
+  if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=' Con đã xong 5 câu đố hôm nay!';confetti()}
+  say(msg,{happy:true});
+  // diễn tiếp phần còn lại cho câu thắng quân
+  if(p.cont&&p.cont.length===2&&p.theme!=='mate1'&&p.theme!=='mate2'){
+    setTimeout(()=>{try{const r1=g.move(uciMove(p.cont[0]));P.last=r1;renderPuzzle();
+      setTimeout(()=>{try{const r2=g.move(uciMove(p.cont[1]));P.last=r2;sfx.capture();renderPuzzle({[r2.to]:'good'})}catch(e){}},900)}catch(e){}},1600);
+  }
+}
+$('pHintBtn').onclick=()=>{
+  if(!P||P.done)return;
+  P.hints++;
+  const u=P.p.theme==='mate2'&&P.step===2?null:P.p.sol[P.step];
+  let from=u?u.slice(0,2):null,to=u?u.slice(2,4):null;
+  if(!u){const m=P.g.moves({verbose:true}).find(m=>{P.g.move(m);const c=P.g.isCheckmate();P.g.undo();return c});if(m){from=m.from;to=m.to}}
+  if(!from)return;
+  if(P.hints===1){renderPuzzle({[from]:'hint'});say(`Gợi ý: dùng quân ${NAMES[P.g.get(from).type]} này.`)}
+  else{renderPuzzle({[from]:'hint',[to]:'hint'});say(`Đi quân ${NAMES[P.g.get(from).type]} đến ${to}.`)}
+};
+$('pRetryBtn').onclick=()=>P&&startPuzzle(P.list,P.idx,P.daily);
+$('pNextBtn').onclick=()=>{
+  if(!P)return;
+  if(P.daily){const done=progress.daily[todayKey()]||[];const nx=P.list.findIndex((p,i)=>i>P.idx&&!done.includes(p.id));
+    if(nx<0&&done.length>=P.list.length){goHome();return}
+    startPuzzle(P.list,nx<0?(P.idx+1)%P.list.length:nx,true);return}
+  startPuzzle(P.list,(P.idx+1)%P.list.length,false);
 };
 
 // ====== Học từng quân ======
-let L=null; // {idx,round,pos,type,stars:Set,sel}
+let L=null;
 function openLessons(){
   show('lessonList');
-  const el=$('lessons');el.innerHTML='';
-  LESSONS.forEach((ls,i)=>{
-    const b=document.createElement('button');b.className='lesson';
-    b.innerHTML=`<div class="g">${GLYPH[ls.t]}</div><div class="n">${NAMES[ls.t]}</div><div class="s">${progress.lessons[ls.t]?'⭐⭐⭐':''}</div>`;
-    b.onclick=()=>startLesson(i,0);el.appendChild(b);
-  });
-  say('Con chọn một quân cờ để học nhé. Mỗi bài, con dùng quân đó để ăn hết các ngôi sao!');
+  $('lessons').innerHTML=LESSONS.map((ls,i)=>`<button class="card" data-i="${i}"><div class="g">${GLYPH[ls.t]}</div><div class="n">${NAMES[ls.t]}</div><div class="s">${progress.lessons[ls.t]?'⭐⭐⭐':''}</div></button>`).join('');
+  $('lessons').querySelectorAll('.card').forEach(b=>b.onclick=()=>startLesson(+b.dataset.i,0));
+  say('Con chọn một quân cờ để ôn lại nhé. Dùng quân đó ăn hết các ngôi sao!');
 }
 function startLesson(i,round){
   const ls=LESSONS[i];
   L={idx:i,round,type:ls.t,pos:ls.start,stars:new Set(ls.rounds[round]),sel:false};
-  show('lesson');$('capTop').textContent='';$('capBottom').textContent='';renderLesson();
-  say((round===0?HOW[ls.t]+' ':'Màn 2! ')+'Con hãy dùng quân '+NAMES[ls.t]+' ăn hết các ngôi sao nhé.');
+  show('lesson');renderLesson();
+  say((round===0?HOW[ls.t]+' ':'Màn 2! ')+'Dùng quân '+NAMES[ls.t]+' ăn hết các ngôi sao nhé.');
 }
 function lessonMoves(type,sq){
   const f=FILES.indexOf(sq[0]),r=+sq[1],out=[];
   const add=(df,dr)=>{const nf=f+df,nr=r+dr;if(nf>=0&&nf<8&&nr>=1&&nr<=8)out.push(FILES[nf]+nr)};
   const slide=dirs=>dirs.forEach(([df,dr])=>{for(let k=1;k<8;k++)add(df*k,dr*k)});
-  const straight=[[1,0],[-1,0],[0,1],[0,-1]],diag=[[1,1],[1,-1],[-1,1],[-1,-1]];
-  if(type==='r')slide(straight);
-  if(type==='b')slide(diag);
-  if(type==='q')slide(straight.concat(diag));
-  if(type==='k')straight.concat(diag).forEach(([a,b])=>add(a,b));
+  const st=[[1,0],[-1,0],[0,1],[0,-1]],dg=[[1,1],[1,-1],[-1,1],[-1,-1]];
+  if(type==='r')slide(st);if(type==='b')slide(dg);if(type==='q')slide(st.concat(dg));
+  if(type==='k')st.concat(dg).forEach(([a,b])=>add(a,b));
   if(type==='n')[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(([a,b])=>add(a,b));
   if(type==='p'){add(0,1);if(r===2)add(0,2)}
   return out;
 }
 function renderLesson(){
   const tg=L.sel?lessonMoves(L.type,L.pos):[];
-  drawBoard(sq=>({
-    piece:sq===L.pos?{type:L.type,color:'w'}:null,
-    star:L.stars.has(sq),
-    target:tg.includes(sq),
-    cls:sq===L.pos&&L.sel?'sel':''
-  }));
+  drawBoard(sq=>({piece:sq===L.pos?{type:L.type,color:'w'}:null,star:L.stars.has(sq),target:tg.includes(sq),cls:sq===L.pos&&L.sel?'sel':''}));
 }
 function lessonClick(sq){
   if(!L)return;
@@ -3825,20 +4106,22 @@ function lessonClick(sq){
   if(!L.sel){say('Con chạm vào quân '+NAMES[L.type]+' trước nhé.');return}
   if(!lessonMoves(L.type,L.pos).includes(sq)){sfx.bad();say('Quân '+NAMES[L.type]+' không đi được đến đó. '+HOW[L.type]);return}
   L.pos=sq;L.sel=false;
-  if(L.stars.delete(sq)){sfx.star()}else sfx.move();
+  if(L.stars.delete(sq))sfx.star();else sfx.move();
   if(L.type==='p'&&sq[1]==='8'){L.type='q';say('Tốt đi đến hàng cuối đã biến thành Hậu! Đó gọi là phong cấp.',{happy:true})}
   renderLesson();
   if(L.stars.size===0){
     const ls=LESSONS[L.idx];
     if(L.round+1<ls.rounds.length){say('Giỏi quá! Sang màn tiếp theo nào!',{happy:true});sfx.win();setTimeout(()=>startLesson(L.idx,L.round+1),1800)}
-    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();
-      say(`Tuyệt vời! Con đã học xong quân ${NAMES[ls.t]}! Con được 3 ngôi sao.`,{happy:true})}
-  }else if(L.type!=='q'||LESSONS[L.idx].t!=='p')say(`Còn ${L.stars.size} ngôi sao nữa thôi!`,{voice:false});
+    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();say(`Tuyệt vời! Con đã học xong quân ${NAMES[ls.t]}!`,{happy:true})}
+  }else if(!(L.type==='q'&&LESSONS[L.idx].t==='p'))say(`Còn ${L.stars.size} ngôi sao nữa thôi!`,{voice:false});
 }
 $('retryBtn').onclick=()=>L&&startLesson(L.idx,0);
 $('backLessons').onclick=openLessons;
 
+// cho kiểm thử tự động
+window.__app={get game(){return game},get P(){return P},get RV(){return RV},Engine,startGame,startPuzzle,PUZ,reviewGame,showReview};
 goHome();
+}
 </script>
 </body>
 </html>
