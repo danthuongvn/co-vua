@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Cờ Vua Cùng Cú Mèo</title>
+<style>
+  :root{
+    --bg:#fff8e7; --ink:#3b2f2f; --light:#f3dcb4; --dark:#b5835a;
+    --accent:#ff8a3d; --green:#3fae5a; --blue:#4a90e2; --red:#e8505b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:"Nunito","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    min-height:100vh;display:flex;flex-direction:column;align-items:center}
+  header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+    background:#ffd36b;box-shadow:0 2px 0 #e9b949}
+  header h1{font-size:1.25rem;margin:0}
+  .iconbtn{border:none;background:#fff;border-radius:12px;font-size:1.4rem;width:46px;height:46px;cursor:pointer;
+    box-shadow:0 3px 0 #d9a93a}
+  main{width:100%;max-width:560px;padding:12px;display:flex;flex-direction:column;gap:12px}
+  .guide{display:flex;gap:10px;align-items:flex-start}
+  .owl{font-size:3.2rem;line-height:1;flex:none;animation:bob 2.4s ease-in-out infinite}
+  .owl.happy{animation:jump .5s ease 2}
+  @keyframes bob{50%{transform:translateY(-4px)}}
+  @keyframes jump{50%{transform:translateY(-14px) rotate(-8deg)}}
+  .bubble{background:#fff;border-radius:16px;padding:10px 14px;font-size:1.08rem;line-height:1.4;position:relative;
+    box-shadow:0 3px 0 #e6d3b0;min-height:56px;flex:1}
+  .bubble:before{content:"";position:absolute;left:-10px;top:18px;border:10px solid transparent;border-right-color:#fff;border-left:0}
+  .board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;
+    border:6px solid #7a5230;user-select:none;touch-action:manipulation}
+  .sq{position:relative;min-width:0;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .sq.l{background:var(--light)} .sq.d{background:var(--dark)}
+  .sq.last{box-shadow:inset 0 0 0 100px rgba(255,214,60,.45)}
+  .sq.sel{box-shadow:inset 0 0 0 100px rgba(74,144,226,.55)}
+  .sq.hint{box-shadow:inset 0 0 0 5px #9b59ff, inset 0 0 0 100px rgba(155,89,255,.25)}
+  .sq.check{background:radial-gradient(circle,#ff4d4d 0%,#ff4d4d55 55%,transparent 75%)}
+  .sq .coord{position:absolute;font-size:.6rem;opacity:.6;left:3px;bottom:1px}
+  .piece{font-family:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif;font-size:min(10vw,52px);line-height:1;pointer-events:none;transition:transform .15s}
+  .piece.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 2px 2px #0006}
+  .piece.b{color:#222;text-shadow:0 1px 1px #fff8}
+  .sq.sel .piece{transform:scale(1.15)}
+  .dot{position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(63,174,90,.75);pointer-events:none}
+  .ring{position:absolute;inset:6%;border-radius:50%;border:5px solid rgba(232,80,91,.8);pointer-events:none}
+  .star{font-size:min(8vw,40px);pointer-events:none;animation:twinkle 1.2s ease-in-out infinite}
+  @keyframes twinkle{50%{transform:scale(1.15)}}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .btn{border:none;border-radius:14px;padding:12px 16px;font-size:1.05rem;font-weight:700;cursor:pointer;color:#fff;
+    background:var(--blue);box-shadow:0 4px 0 #2f6fb8;font-family:inherit}
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #2f6fb8}
+  .btn.orange{background:var(--accent);box-shadow:0 4px 0 #d96a22}
+  .btn.green{background:var(--green);box-shadow:0 4px 0 #2b8442}
+  .btn.purple{background:#9b59ff;box-shadow:0 4px 0 #7337d6}
+  .captured{font-family:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif;min-height:28px;font-size:1.4rem;letter-spacing:2px}
+  .menu{display:grid;gap:14px;margin-top:8px}
+  .menu .btn{font-size:1.3rem;padding:20px;text-align:left;display:flex;align-items:center;gap:14px}
+  .menu .btn span{font-size:2rem}
+  .lessons{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .lesson{background:#fff;border-radius:16px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 4px 0 #e6d3b0;border:none;font-family:inherit;color:inherit}
+  .lesson .g{font-size:2.6rem;font-family:'Segoe UI Symbol','DejaVu Sans','Noto Sans Symbols2',serif}
+  .lesson .n{font-weight:800;font-size:1.05rem}
+  .lesson .s{font-size:1rem;min-height:1.2em}
+  .stats{text-align:center;font-size:1.05rem}
+  .hidden{display:none!important}
+  .confetti{position:fixed;top:-40px;font-size:2rem;pointer-events:none;animation:fall 2.2s linear forwards;z-index:9}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+  .levelrow{display:flex;gap:6px;justify-content:center;align-items:center;font-weight:700}
+  .levelrow button{border:none;border-radius:10px;padding:8px 12px;font-family:inherit;font-weight:700;cursor:pointer;background:#fff;box-shadow:0 3px 0 #e6d3b0}
+  .levelrow button.on{background:var(--green);color:#fff;box-shadow:0 3px 0 #2b8442}
+</style>
+</head>
+<body>
+<header>
+  <button class="iconbtn" id="homeBtn" aria-label="Về trang chủ">🏠</button>
+  <h1>♞ Cờ Vua Cùng Cú Mèo</h1>
+  <button class="iconbtn" id="voiceBtn" aria-label="Bật tắt giọng đọc">🔊</button>
+</header>
+
+<main>
+  <div class="guide">
+    <div class="owl" id="owl">🦉</div>
+    <div class="bubble" id="bubble">Chào con!</div>
+  </div>
+
+  <!-- Trang chủ -->
+  <section id="home" class="menu">
+    <button class="btn orange" data-go="learn"><span>📚</span> Học từng quân cờ</button>
+    <button class="btn green" data-go="bot"><span>🤖</span> Chơi với máy</button>
+    <button class="btn" data-go="two"><span>👫</span> Hai người chơi</button>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <!-- Danh sách bài học -->
+  <section id="lessonList" class="hidden">
+    <div class="lessons" id="lessons"></div>
+  </section>
+
+  <!-- Bàn cờ -->
+  <section id="boardWrap" class="hidden">
+    <div class="levelrow" id="levelRow">Máy:
+      <button data-lv="1">😊 Dễ</button><button data-lv="2">🙂 Vừa</button>
+    </div>
+    <div class="captured" id="capTop"></div>
+    <div class="board" id="board"></div>
+    <div class="captured" id="capBottom"></div>
+    <div class="controls" id="playControls">
+      <button class="btn purple" id="hintBtn">💡 Gợi ý</button>
+      <button class="btn orange" id="undoBtn">↩️ Đi lại</button>
+      <button class="btn green" id="newBtn">🔄 Ván mới</button>
+    </div>
+    <div class="controls hidden" id="learnControls">
+      <button class="btn orange" id="retryBtn">🔄 Làm lại</button>
+      <button class="btn" id="backLessons">📚 Các bài học</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/*CHESSJS*/
+</script>
+<script>
+// ====== Dữ liệu ======
+const NAMES={p:'Tốt',n:'Mã',b:'Tượng',r:'Xe',q:'Hậu',k:'Vua'};
+const GLYPH={k:'♚\uFE0E',q:'♛\uFE0E',r:'♜\uFE0E',b:'♝\uFE0E',n:'♞\uFE0E',p:'♟\uFE0E'};
+const VAL={p:1,n:3,b:3,r:5,q:9,k:100};
+const HOW={
+  p:'Tốt đi thẳng về phía trước 1 ô. Lần đầu tiên được đi 2 ô. Nhưng khi ăn quân thì Tốt ăn chéo.',
+  n:'Mã đi hình chữ L: 2 ô thẳng rồi rẽ 1 ô. Mã còn nhảy qua đầu quân khác được!',
+  b:'Tượng đi chéo, bao xa cũng được, miễn là không có quân chắn đường.',
+  r:'Xe đi thẳng: ngang hoặc dọc, bao xa cũng được.',
+  q:'Hậu là quân mạnh nhất: đi thẳng như Xe và đi chéo như Tượng.',
+  k:'Vua đi 1 ô theo mọi hướng. Vua rất quan trọng, con phải bảo vệ Vua cẩn thận!'
+};
+const LESSONS=[
+  {t:'r',start:'a1',rounds:[['a5','e5','e8'],['h1','h6','c6','c2']]},
+  {t:'b',start:'c1',rounds:[['e3','g5','d8'],['a3','f8','h6','d2']]},
+  {t:'q',start:'d1',rounds:[['d5','h5','e8'],['a4','g7','b2','h1']]},
+  {t:'k',start:'e1',rounds:[['e2','f3','g3'],['d2','c3','c4','d5']]},
+  {t:'n',start:'b1',rounds:[['c3','d5','f6'],['a3','c4','e5','g6']]},
+  {t:'p',start:'e2',rounds:[['e4','e5','e6'],['e4','e5','e6','e7','e8']]}
+];
+const FILES='abcdefgh';
+
+// ====== Lưu tiến độ ======
+let progress={lessons:{},wins:0,games:0};
+try{const s=JSON.parse(localStorage.getItem('covua-progress'));if(s)progress=Object.assign(progress,s)}catch(e){}
+function save(){try{localStorage.setItem('covua-progress',JSON.stringify(progress))}catch(e){}}
+
+// ====== Giọng đọc & âm thanh ======
+let voiceOn=true;
+try{voiceOn=localStorage.getItem('covua-voice')!=='off'}catch(e){}
+let viVoice=null;
+function pickVoice(){
+  if(!('speechSynthesis' in window))return;
+  const vs=speechSynthesis.getVoices();
+  viVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith('vi'))||null;
+}
+if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function speak(text){
+  if(!voiceOn||!('speechSynthesis' in window))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text.replace(/[⭐🎉👏💡🦉😊🙂❤️]/gu,''));
+  u.lang='vi-VN'; if(viVoice)u.voice=viVoice; u.rate=0.95; u.pitch=1.15;
+  speechSynthesis.speak(u);
+}
+const $=id=>document.getElementById(id);
+function updateVoiceBtn(){$('voiceBtn').textContent=voiceOn?'🔊':'🔇'}
+$('voiceBtn').onclick=()=>{voiceOn=!voiceOn;try{localStorage.setItem('covua-voice',voiceOn?'on':'off')}catch(e){}
+  updateVoiceBtn(); if(!voiceOn&&'speechSynthesis' in window)speechSynthesis.cancel(); else speak('Cú Mèo sẽ đọc cho con nghe nhé!')};
+updateVoiceBtn();
+
+let actx=null;
+function beep(freq=520,dur=.08,type='sine',vol=.15){
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);
+    o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+dur)}catch(e){}
+}
+const sfx={move:()=>beep(440,.07,'triangle'),capture:()=>{beep(300,.1,'square',.1);setTimeout(()=>beep(220,.12,'square',.08),70)},
+  win:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle'),i*130)),
+  star:()=>{beep(880,.08);setTimeout(()=>beep(1175,.12),80)},bad:()=>beep(180,.2,'sawtooth',.06)};
+
+// ====== Cú Mèo nói ======
+function say(text,{voice=true,happy=false}={}){
+  $('bubble').textContent=text;
+  if(happy){const o=$('owl');o.classList.remove('happy');void o.offsetWidth;o.classList.add('happy')}
+  if(voice)speak(text);
+}
+function confetti(){
+  const e=['🎉','⭐','🎈','✨','🏆'];
+  for(let i=0;i<28;i++){const s=document.createElement('div');s.className='confetti';
+    s.textContent=e[i%e.length];s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*.8+'s';
+    document.body.appendChild(s);setTimeout(()=>s.remove(),3200)}
+}
+
+// ====== Điều hướng ======
+let view='home';
+function show(v){
+  view=v;
+  $('home').classList.toggle('hidden',v!=='home');
+  $('lessonList').classList.toggle('hidden',v!=='lessonList');
+  $('boardWrap').classList.toggle('hidden',!(v==='bot'||v==='two'||v==='lesson'));
+  $('playControls').classList.toggle('hidden',v==='lesson');
+  $('learnControls').classList.toggle('hidden',v!=='lesson');
+  $('levelRow').classList.toggle('hidden',v!=='bot');
+  $('hintBtn').classList.toggle('hidden',v!=='bot');
+  window.scrollTo(0,0);
+}
+function goHome(){
+  show('home');
+  $('stats').textContent=`⭐ Bài đã học: ${Object.keys(progress.lessons).length}/${LESSONS.length}   🏆 Thắng máy: ${progress.wins} ván`;
+  say('Chào con! Mình là Cú Mèo. Hôm nay con muốn học quân cờ hay chơi một ván nào?');
+}
+$('homeBtn').onclick=goHome;
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
+  const g=b.dataset.go; if(g==='learn')openLessons(); else startGame(g);
+});
+
+// ====== Vẽ bàn cờ chung ======
+function drawBoard(cells){
+  const el=$('board');el.innerHTML='';
+  for(let r=8;r>=1;r--)for(let f=0;f<8;f++){
+    const sq=FILES[f]+r, c=cells(sq)||{};
+    const d=document.createElement('div');
+    d.className='sq '+((f+r)%2===0?'l':'d')+(c.cls?' '+c.cls:'');
+    d.dataset.sq=sq;
+    if(f===0||r===1){const k=document.createElement('span');k.className='coord';k.textContent=(f===0?r:'')+(r===1?FILES[f]:'');d.appendChild(k)}
+    if(c.star){const s=document.createElement('span');s.className='star';s.textContent='⭐';d.appendChild(s)}
+    if(c.piece){const p=document.createElement('span');p.className='piece '+c.piece.color;p.textContent=GLYPH[c.piece.type];d.appendChild(p)}
+    if(c.target){const t=document.createElement('span');t.className=c.capture?'ring':'dot';d.appendChild(t)}
+    el.appendChild(d);
+  }
+}
+$('board').addEventListener('click',e=>{
+  const s=e.target.closest('.sq'); if(!s)return;
+  if(view==='lesson')lessonClick(s.dataset.sq); else gameClick(s.dataset.sq);
+});
+
+// ====== Chơi cờ ======
+let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,level=1;
+function startGame(m){
+  mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;
+  show(m);renderGame();
+  if(m==='bot')say('Con cầm quân Trắng và đi trước nhé. Chạm vào một quân để xem nó đi thế nào. Bí quá thì bấm Gợi ý!');
+  else say('Hai bạn chơi cùng nhau nhé! Bên Trắng đi trước.');
+  setLevelButtons();
+}
+function setLevelButtons(){document.querySelectorAll('[data-lv]').forEach(b=>b.classList.toggle('on',+b.dataset.lv===level))}
+document.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;setLevelButtons();
+  say(level===1?'Máy sẽ chơi dễ thôi.':'Máy sẽ chơi cẩn thận hơn đó. Cố lên con!')});
+
+function kingSquare(color){
+  for(const row of game.board())for(const p of row)if(p&&p.type==='k'&&p.color===color)return p.square;
+}
+function renderGame(){
+  const targets=selected?game.moves({square:selected,verbose:true}):[];
+  const chk=game.inCheck()?kingSquare(game.turn()):null;
+  drawBoard(sq=>{
+    const p=game.get(sq), c={piece:p||null,cls:''};
+    if(lastMove&&(sq===lastMove.from||sq===lastMove.to))c.cls+=' last';
+    if(hint&&(sq===hint.from||sq===hint.to))c.cls+=' hint';
+    if(sq===selected)c.cls+=' sel';
+    if(sq===chk)c.cls+=' check';
+    const t=targets.find(m=>m.to===sq); if(t){c.target=true;c.capture=!!t.captured}
+    return c;
+  });
+  // quân bị ăn
+  const count={w:{},b:{}};
+  for(const m of game.history({verbose:true}))if(m.captured){const col=m.color==='w'?'b':'w';count[col][m.captured]=(count[col][m.captured]||0)+1}
+  const fmt=col=>['q','r','b','n','p'].map(t=>GLYPH[t].repeat(count[col][t]||0)).join('');
+  $('capTop').textContent=fmt('w');   // quân trắng bị ăn (máy đã ăn)
+  $('capBottom').textContent=fmt('b');// quân đen bị ăn (con đã ăn)
+  $('capTop').style.color='#999';$('capBottom').style.color='#222';
+}
+const sideName=c=>mode==='bot'?(c==='w'?'con':'máy'):(c==='w'?'bên Trắng':'bên Đen');
+
+function gameClick(sq){
+  if(busy||game.isGameOver())return;
+  const turn=game.turn();
+  if(mode==='bot'&&turn!=='w')return;
+  const p=game.get(sq);
+  if(selected){
+    const mv=game.moves({square:selected,verbose:true}).find(m=>m.to===sq);
+    if(mv){doMove(mv);return}
+  }
+  if(p&&p.color===turn){
+    selected=sq;hint=null;renderGame();
+    const legal=game.moves({square:sq,verbose:true});
+    let txt='Đây là quân '+NAMES[p.type]+'. '+HOW[p.type];
+    if(!legal.length)txt='Quân '+NAMES[p.type]+' này đang bị chắn, chưa đi được. Con chọn quân khác nhé.';
+    else if(game.inCheck())txt='Vua đang bị chiếu! Các chấm xanh là những nước cứu được Vua.';
+    say(txt,{voice:lastExplained!==p.type||!legal.length});
+    lastExplained=p.type;
+  }else if(p){
+    say('Đó là quân '+NAMES[p.type]+' của '+sideName(p.color)+'. '+(mode==='bot'?'Con chọn quân màu trắng của mình nhé.':'Chưa đến lượt bên đó đâu.'));
+  }else if(selected){
+    say('Quân '+NAMES[game.get(selected).type]+' không đi đến ô đó được. Con chạm vào chấm xanh nhé.');sfx.bad();
+  }
+}
+
+function doMove(mv){
+  const res=game.move({from:mv.from,to:mv.to,promotion:'q'});
+  selected=null;hint=null;lastMove=res;
+  res.captured?sfx.capture():sfx.move();
+  renderGame();
+  if(endCheck())return;
+  if(mode==='bot'){
+    let msg=praise(res);
+    const danger=threats(game); // máy sắp có thể ăn gì
+    if(danger.length){const d=danger[0];msg+=` Ôi, quân ${NAMES[game.get(d.sq).type]} của con ở ${d.sq} có thể bị ăn mất. Con có thể bấm Đi lại.`}
+    say(msg.trim()||'Máy đang suy nghĩ...');
+    busy=true;setTimeout(botTurn,danger.length?1600:900);
+  }else{
+    say((praise(res)+' Đến lượt '+sideName(game.turn())+'.').trim());
+  }
+}
+function praise(m){
+  let s='';
+  if(m.flags.includes('k')||m.flags.includes('q'))s+='Nhập thành rồi! Vua được Xe che chắn an toàn hơn. ';
+  if(m.captured)s+=['Giỏi lắm!','Tuyệt vời!','Hay quá!'][Math.floor(Math.random()*3)]+` Ăn được quân ${NAMES[m.captured]} rồi. `;
+  if(m.promotion)s+='Tốt đi đến hàng cuối và biến thành Hậu! ';
+  if(m.san.includes('+'))s+='Chiếu! Vua bên kia đang bị tấn công. ';
+  return s;
+}
+
+// Những quân của bên KHÔNG đến lượt mà bên đến lượt có thể ăn có lời
+function threats(g){
+  const best={};
+  for(const m of g.moves({verbose:true})){
+    if(!m.captured)continue;
+    g.move(m);
+    const recap=g.moves({verbose:true}).some(x=>x.to===m.to);
+    g.undo();
+    const gain=VAL[m.captured]-(recap?VAL[m.piece]:0);
+    if(gain>0&&(!best[m.to]||best[m.to].gain<gain))best[m.to]={sq:m.to,gain};
+  }
+  return Object.values(best).sort((a,b)=>b.gain-a.gain);
+}
+// Đổi lượt đi (để xem bên kia đang dọa gì)
+function flipped(g){
+  if(g.inCheck())return null;
+  const f=g.fen().split(' ');f[1]=f[1]==='w'?'b':'w';f[3]='-';
+  try{return new Chess(f.join(' '))}catch(e){return null}
+}
+function scoreMove(m,noise){
+  game.move(m);
+  let s=0;
+  if(game.isCheckmate())s+=1000;
+  else if(game.isDraw())s-=40;
+  if(m.captured)s+=VAL[m.captured]*10;
+  if(m.promotion)s+=80;
+  if(m.san.includes('+'))s+=3;
+  const t=threats(game); if(t.length)s-=t[0].gain*9;
+  game.undo();
+  // khuyến khích ra quân và chiếm trung tâm
+  if('de'.includes(m.to[0])&&'45'.includes(m.to[1]))s+=2;
+  if((m.piece==='n'||m.piece==='b')&&(m.from[1]==='1'||m.from[1]==='8'))s+=2;
+  if(m.piece==='k'&&!m.flags.includes('k')&&!m.flags.includes('q'))s-=3;
+  return s+Math.random()*noise;
+}
+function botTurn(){
+  const moves=game.moves({verbose:true});
+  let pick;
+  if(level===1&&Math.random()<0.3)pick=moves[Math.floor(Math.random()*moves.length)];
+  else{let bs=-1e9;for(const m of moves){const s=scoreMove(m,level===1?12:3);if(s>bs){bs=s;pick=m}}}
+  const res=game.move({from:pick.from,to:pick.to,promotion:'q'});
+  lastMove=res;busy=false;
+  res.captured?sfx.capture():sfx.move();
+  renderGame();
+  if(endCheck())return;
+  let msg=`Máy đi quân ${NAMES[res.piece]} đến ${res.to}.`;
+  if(res.captured)msg+=` Máy ăn mất quân ${NAMES[res.captured]} của con rồi.`;
+  if(game.inCheck())msg+=' Cẩn thận! Vua của con đang bị chiếu. Con phải cứu Vua: chạy đi, chặn lại, hoặc ăn quân đang chiếu.';
+  else{
+    const f=flipped(game), d=f?threats(f):[];
+    if(d.length)msg+=` Quân ${NAMES[game.get(d[0].sq).type]} của con ở ${d[0].sq} đang bị dọa. Con nên chạy đi hoặc bảo vệ nó.`;
+    else{const o=threats(game);if(o.length&&Math.random()<0.6)msg+=' Gợi ý nhỏ: có quân của máy đang không được bảo vệ đó!';}
+  }
+  say(msg);
+}
+function endCheck(){
+  if(!game.isGameOver())return false;
+  progress.games++;
+  if(game.isCheckmate()){
+    const loser=game.turn();
+    if(mode==='bot'&&loser==='b'){progress.wins++;say('Chiếu hết! Con thắng rồi! Cú Mèo tự hào về con quá!',{happy:true});confetti();sfx.win()}
+    else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con, thua là để học. Mình chơi ván mới nhé!');
+    else{say(`Chiếu hết! ${loser==='w'?'Bên Đen':'Bên Trắng'} thắng rồi!`,{happy:true});confetti();sfx.win()}
+  }else if(game.isStalemate())say('Hết cờ! Bên đến lượt không còn nước đi mà Vua không bị chiếu, nên ván này hòa.');
+  else say('Ván cờ hòa rồi! Hai bên chơi giỏi ngang nhau.');
+  save();renderGame();return true;
+}
+$('newBtn').onclick=()=>startGame(mode);
+$('undoBtn').onclick=()=>{
+  if(busy)return;
+  if(mode==='bot'){if(game.turn()==='w'&&game.history().length>=2){game.undo();game.undo()}else if(game.turn()==='b')game.undo()}
+  else game.undo();
+  const h=game.history({verbose:true});lastMove=h[h.length-1]||null;selected=null;hint=null;renderGame();
+  say('Mình đi lại nhé. Con suy nghĩ thật kỹ rồi đi.');
+};
+$('hintBtn').onclick=()=>{
+  if(busy||game.isGameOver()||game.turn()!=='w')return;
+  let best,bs=-1e9;
+  for(const m of game.moves({verbose:true})){const s=scoreMove(m,0.5);if(s>bs){bs=s;best=m}}
+  hint=best;selected=null;renderGame();
+  game.move(best);const mate=game.isCheckmate();game.undo();
+  let why='đây là nước đi an toàn.';
+  if(mate)why='nước này chiếu hết luôn đó!';
+  else if(best.captured)why=`để ăn quân ${NAMES[best.captured]} của máy.`;
+  else if(best.san.includes('+'))why='để chiếu Vua của máy.';
+  else{const f=flipped(game),d=f?threats(f):[];if(d.some(x=>x.sq===best.from))why='để cứu quân này khỏi bị ăn.'}
+  say(`Cú gợi ý: thử đi quân ${NAMES[best.piece]} từ ${best.from} đến ${best.to}, ${why}`);
+};
+
+// ====== Học từng quân ======
+let L=null; // {idx,round,pos,type,stars:Set,sel}
+function openLessons(){
+  show('lessonList');
+  const el=$('lessons');el.innerHTML='';
+  LESSONS.forEach((ls,i)=>{
+    const b=document.createElement('button');b.className='lesson';
+    b.innerHTML=`<div class="g">${GLYPH[ls.t]}</div><div class="n">${NAMES[ls.t]}</div><div class="s">${progress.lessons[ls.t]?'⭐⭐⭐':''}</div>`;
+    b.onclick=()=>startLesson(i,0);el.appendChild(b);
+  });
+  say('Con chọn một quân cờ để học nhé. Mỗi bài, con dùng quân đó để ăn hết các ngôi sao!');
+}
+function startLesson(i,round){
+  const ls=LESSONS[i];
+  L={idx:i,round,type:ls.t,pos:ls.start,stars:new Set(ls.rounds[round]),sel:false};
+  show('lesson');$('capTop').textContent='';$('capBottom').textContent='';renderLesson();
+  say((round===0?HOW[ls.t]+' ':'Màn 2! ')+'Con hãy dùng quân '+NAMES[ls.t]+' ăn hết các ngôi sao nhé.');
+}
+function lessonMoves(type,sq){
+  const f=FILES.indexOf(sq[0]),r=+sq[1],out=[];
+  const add=(df,dr)=>{const nf=f+df,nr=r+dr;if(nf>=0&&nf<8&&nr>=1&&nr<=8)out.push(FILES[nf]+nr)};
+  const slide=dirs=>dirs.forEach(([df,dr])=>{for(let k=1;k<8;k++)add(df*k,dr*k)});
+  const straight=[[1,0],[-1,0],[0,1],[0,-1]],diag=[[1,1],[1,-1],[-1,1],[-1,-1]];
+  if(type==='r')slide(straight);
+  if(type==='b')slide(diag);
+  if(type==='q')slide(straight.concat(diag));
+  if(type==='k')straight.concat(diag).forEach(([a,b])=>add(a,b));
+  if(type==='n')[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(([a,b])=>add(a,b));
+  if(type==='p'){add(0,1);if(r===2)add(0,2)}
+  return out;
+}
+function renderLesson(){
+  const tg=L.sel?lessonMoves(L.type,L.pos):[];
+  drawBoard(sq=>({
+    piece:sq===L.pos?{type:L.type,color:'w'}:null,
+    star:L.stars.has(sq),
+    target:tg.includes(sq),
+    cls:sq===L.pos&&L.sel?'sel':''
+  }));
+}
+function lessonClick(sq){
+  if(!L)return;
+  if(sq===L.pos){L.sel=!L.sel;renderLesson();return}
+  if(!L.sel){say('Con chạm vào quân '+NAMES[L.type]+' trước nhé.');return}
+  if(!lessonMoves(L.type,L.pos).includes(sq)){sfx.bad();say('Quân '+NAMES[L.type]+' không đi được đến đó. '+HOW[L.type]);return}
+  L.pos=sq;L.sel=false;
+  if(L.stars.delete(sq)){sfx.star()}else sfx.move();
+  if(L.type==='p'&&sq[1]==='8'){L.type='q';say('Tốt đi đến hàng cuối đã biến thành Hậu! Đó gọi là phong cấp.',{happy:true})}
+  renderLesson();
+  if(L.stars.size===0){
+    const ls=LESSONS[L.idx];
+    if(L.round+1<ls.rounds.length){say('Giỏi quá! Sang màn tiếp theo nào!',{happy:true});sfx.win();setTimeout(()=>startLesson(L.idx,L.round+1),1800)}
+    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();
+      say(`Tuyệt vời! Con đã học xong quân ${NAMES[ls.t]}! Con được 3 ngôi sao.`,{happy:true})}
+  }else if(L.type!=='q'||LESSONS[L.idx].t!=='p')say(`Còn ${L.stars.size} ngôi sao nữa thôi!`,{voice:false});
+}
+$('retryBtn').onclick=()=>L&&startLesson(L.idx,0);
+$('backLessons').onclick=openLessons;
+
+goHome();
+</script>
+</body>
+</html>
