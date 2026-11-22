@@ -127,6 +127,16 @@
     </div>
   </section>
 
+  <section id="delForm" class="hidden">
+    <div class="form">
+      <div style="text-align:center"><div style="font-size:3rem" id="delAv"></div><b id="delName"></b></div>
+      <div>Xóa người chơi sẽ mất hết sao và tiến độ. Người lớn hãy giải phép tính để xác nhận:</div>
+      <div style="text-align:center;font-size:1.8rem;font-weight:800" id="delQ"></div>
+      <input id="delAns" type="text" inputmode="numeric" pattern="-?[0-9]*" placeholder="Kết quả" autocomplete="off">
+      <div class="controls"><button class="btn red" id="delOk">🗑️ Xóa</button><button class="btn green" id="delCancel">Thôi, không xóa</button></div>
+    </div>
+  </section>
+
   <!-- Trang chủ -->
   <section id="home" class="menu">
     <button class="btn purple" data-go="daily"><span>🗓️</span> Câu đố hôm nay</button>
@@ -3683,6 +3693,7 @@ function show(v){
   $('home').classList.toggle('hidden',v!=='home');
   $('playerPick').classList.toggle('hidden',v!=='players');
   $('playerForm').classList.toggle('hidden',v!=='playerForm');
+  $('delForm').classList.toggle('hidden',v!=='delForm');
   $('lessonList').classList.toggle('hidden',v!=='lessonList');
   $('puzzleList').classList.toggle('hidden',v!=='puzzleList');
   const onBoard=['bot','two','lesson','puzzle','review'].includes(v);
@@ -4167,25 +4178,20 @@ function updateHeader(){const p=curPlayer();
   $('title').textContent=p?`♞ Cờ Vua của ${shortName()}`:'♞ Cờ Vua';$('playerBtn').textContent=p?p.avatar:'👤'}
 function statsOf(id){const pr=Object.assign(blankProgress(),lsGet('covua-progress-'+id)||{});
   return `🧩 ${Object.keys(pr.solved).length} câu · 🏆 ${pr.wins} ván`}
-let pendingDel=null;
 function openPlayers(){
   show('players');updateHeader();
   const cards=players.list.map(p=>`<button class="pcard${p.id===players.current?' last':''}" data-id="${p.id}">
       <span class="del" data-del="${p.id}" role="button" aria-label="Xóa">✕</span>
-      <div class="av">${p.avatar}</div><div class="nm"></div><div class="st">${pendingDel===p.id?'Bấm ✕ lần nữa để xóa':statsOf(p.id)}</div></button>`).join('');
+      <div class="av">${p.avatar}</div><div class="nm"></div><div class="st">${statsOf(p.id)}</div></button>`).join('');
   $('players').innerHTML=cards+`<button class="pcard add" id="addPlayer"><div class="av">➕</div><div class="nm">Thêm người chơi</div></button>`;
   // tên do người dùng nhập: gán bằng textContent
   $('players').querySelectorAll('.pcard[data-id]').forEach(c=>{const p=players.list.find(x=>x.id===c.dataset.id);c.querySelector('.nm').textContent=p.name});
   $('players').querySelectorAll('.pcard[data-id]').forEach(c=>c.onclick=e=>{
     const del=e.target.closest('[data-del]');
-    if(del){e.stopPropagation();
-      if(pendingDel===del.dataset.del){removePlayer(del.dataset.del);pendingDel=null}else pendingDel=del.dataset.del;
-      openPlayers();
-      if(pendingDel){const p=players.list.find(x=>x.id===pendingDel);say(`Xóa ${p.name} sẽ mất hết sao và tiến độ. Bấm ✕ lần nữa nếu chắc chắn.`,{voice:false})}
-      return}
-    pendingDel=null;choosePlayer(c.dataset.id)});
+    if(del){e.stopPropagation();openDelForm(del.dataset.del);return}
+    choosePlayer(c.dataset.id)});
   $('addPlayer').onclick=()=>openPlayerForm();
-  if(!pendingDel)say(players.list.length?'Ai chơi cờ hôm nay? Bấm vào tên của mình nhé!':'Chào bạn! Mình là Khủng Long Xanh. Bấm Thêm người chơi để tạo tên của bạn nhé!');
+  say(players.list.length?'Ai chơi cờ hôm nay? Bấm vào tên của mình nhé!':'Chào bạn! Mình là Khủng Long Xanh. Bấm Thêm người chơi để tạo tên của bạn nhé!');
 }
 function choosePlayer(id){
   players.current=id;lsSet('covua-players',players);loadProgress(id);updateHeader();sfx.star();goHome();
@@ -4214,7 +4220,28 @@ $('pSave').onclick=()=>{
 };
 $('pname').addEventListener('keydown',e=>{if(e.key==='Enter')$('pSave').click()});
 $('pCancel').onclick=()=>openPlayers();
-$('playerBtn').onclick=()=>{pendingDel=null;openPlayers()};
+$('playerBtn').onclick=()=>openPlayers();
+// Xóa người chơi: phải giải đúng phép tính (để bé không lỡ tay xóa)
+let delId=null,delAnswer=null;
+function newQuestion(){
+  const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const a=r(3,9),b=r(3,9),c=r(1,9);
+  delAnswer=a*b-c;$('delQ').textContent=`${a} × ${b} − ${c} = ?`;$('delAns').value='';
+}
+function openDelForm(id){
+  const p=players.list.find(x=>x.id===id);if(!p)return;
+  delId=id;show('delForm');$('delAv').textContent=p.avatar;$('delName').textContent=p.name;newQuestion();
+  setTimeout(()=>$('delAns').focus(),50);
+  say(`Muốn xóa ${p.name} thì nhờ người lớn giải phép tính nhé.`,{voice:false});
+}
+$('delOk').onclick=()=>{
+  const v=$('delAns').value.trim();
+  if(v!==''&&+v===delAnswer){const p=players.list.find(x=>x.id===delId);removePlayer(delId);delId=null;openPlayers();
+    say(`Đã xóa ${p?p.name:'người chơi'}.`,{voice:false})}
+  else{sfx.bad();say('Chưa đúng. Thử phép tính mới nhé.',{voice:false});newQuestion();$('delAns').focus()}
+};
+$('delAns').addEventListener('keydown',e=>{if(e.key==='Enter')$('delOk').click()});
+$('delCancel').onclick=()=>{delId=null;openPlayers()};
 openPlayers();
 }
 </script>
