@@ -10,6 +10,7 @@ Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Bạn Khủng
 - **Chơi với máy**: 5 mức (Dễ, Vừa, Khá, Giỏi, Cao thủ). Ba mức trên dùng Stockfish. Thắng 2 lần thì Cú gợi ý lên mức.
 - **Xem lại ván**: sau mỗi ván, máy chấm từng nước của bé (Tuyệt vời / Tốt / Chưa chuẩn / Sai lầm) và chỉ nước tốt hơn ngay trên bàn cờ.
 - **Thói quen suy nghĩ**: nhắc 3 câu hỏi trước mỗi nước; có thể tắt lời nhắc quân bị dọa để bé tự nghĩ.
+- **Chơi online với bạn bè**: đăng ký bằng email + mật khẩu, mỗi tài khoản có ID 6 ký tự. Chỉ kết bạn khi bên kia đồng ý; chỉ bạn bè mới mời chơi và nhắn tin được. Chat tự che từ tục, link, email, số điện thoại; có nút Báo cáo và Chặn.
 - **Nhiều người chơi trên một máy**: mỗi người có tên, hình đại diện và tiến độ riêng; khi vào chỉ cần bấm chọn tên.
 - **Học từng quân cờ**, **Hai người chơi**, giọng đọc tiếng Việt, lưu tiến độ trên trình duyệt. Không quảng cáo, không cần mật khẩu.
 
@@ -19,6 +20,9 @@ Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Bạn Khủng
 - `puzzles.js` – dữ liệu câu đố.
 - `engine/` – Stockfish 19 lite (WebAssembly).
 - `tools/` – script build và sinh/kiểm tra câu đố.
+- `src/online.part.js` – phần tài khoản, bạn bè, chat, chơi online (Firebase Auth + Realtime Database).
+- `firebase-config.js` – cấu hình Firebase của dự án. `firebase/database.rules.json` – quy tắc bảo mật, dán vào Realtime Database → Rules.
+- `vendor/` – Firebase JS SDK 13.2 (bản compat).
 
 ```
 npm install
@@ -26,6 +30,13 @@ npm run build      # tạo lại index.html sau khi sửa src/app.html
 npm run puzzles    # sinh thêm câu đố (Stockfish tự đấu, kiểm tra lời giải)
 ```
 
+## Cài đặt phần online
+1. Tạo dự án ở console.firebase.google.com, thêm Web app, chép `firebaseConfig` vào `firebase-config.js` (`window.FIREBASE_CONFIG = {...}`).
+2. Authentication → bật Email/Password; Settings → Authorized domains → thêm `danthuongvn.github.io`.
+3. Realtime Database → tạo (asia-southeast1) → tab Rules → dán nội dung `firebase/database.rules.json` → Publish.
+4. Báo cáo của trẻ nằm ở nhánh `reports` trong Realtime Database (chỉ xem được trong console).
+
 ## Giấy phép bên thứ ba
+- [Firebase JS SDK](https://github.com/firebase/firebase-js-sdk) – Apache 2.0.
 - [Stockfish](https://github.com/official-stockfish/Stockfish) qua [stockfish.js](https://github.com/nmrugg/stockfish.js) – GPLv3, xem `engine/COPYING.txt`. Mã nguồn có tại các liên kết trên.
 - [chess.js](https://github.com/jhlywa/chess.js) – BSD 2-Clause, xem `licenses/chess.js-LICENSE`.

@@ -98,6 +98,31 @@
   .avs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
   .avs button{font-size:1.9rem;border:none;background:#faf5ea;border-radius:12px;padding:6px 0;cursor:pointer}
   .avs button.on{outline:3px solid var(--green);background:#e6f6ea}
+  .tabs{display:flex;gap:6px}.tabs button{flex:1;border:none;border-radius:12px;padding:10px;font:inherit;font-weight:800;background:#faf5ea;cursor:pointer}
+  .tabs button.on{background:var(--green);color:#fff}
+  .linkbtn{border:none;background:none;color:var(--blue);font:inherit;text-decoration:underline;cursor:pointer}
+  .note{font-size:.88rem;opacity:.75}
+  .btn.small{padding:8px 12px;font-size:.95rem}
+  .mecard{display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:12px;box-shadow:0 4px 0 #e6d3b0}
+  .mecard .av{font-size:2.6rem}.mecard .nm{font-weight:800;font-size:1.15rem}.mecard .st{font-size:.85rem;opacity:.75}
+  .code{font-family:ui-monospace,monospace;font-size:1.2rem;letter-spacing:2px;color:#7337d6}
+  .flist{display:grid;gap:8px}
+  .frow{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:10px;box-shadow:0 3px 0 #e6d3b0}
+  .frow .av{font-size:2rem;position:relative}.frow .nm{font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .dot2{position:absolute;right:-2px;bottom:2px;width:12px;height:12px;border-radius:50%;background:#bbb;border:2px solid #fff}
+  .dot2.on{background:#2ecc71}
+  .badge{background:var(--red);color:#fff;border-radius:10px;padding:0 6px;font-size:.75rem;margin-left:4px}
+  .msgs{background:#fff;border-radius:14px;padding:10px;height:min(48vh,380px);overflow:auto;display:flex;flex-direction:column;gap:6px;box-shadow:0 3px 0 #e6d3b0}
+  .msgs.small{height:150px}
+  .msg{max-width:80%;padding:8px 12px;border-radius:14px;background:#f1ece0;align-self:flex-start;word-wrap:break-word;overflow-wrap:anywhere}
+  .msg.me{background:#d6f0dc;align-self:flex-end}
+  .msg small{display:block;opacity:.55;font-size:.7rem}
+  .quick{display:flex;gap:6px;flex-wrap:wrap}
+  .quick button{border:none;background:#fff;border-radius:12px;padding:6px 10px;font:inherit;font-size:.92rem;cursor:pointer;box-shadow:0 2px 0 #e6d3b0}
+  .sendrow{display:flex;gap:8px}.sendrow input,#addCode{flex:1;font:inherit;font-size:1.05rem;padding:10px;border-radius:12px;border:2px solid #e6d3b0;min-width:0}
+  .onbar{background:#fff;border-radius:14px;padding:8px 12px;font-weight:700;text-align:center;box-shadow:0 3px 0 #e6d3b0}
+  .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:20;background:#3b2f2f;color:#fff;border-radius:16px;padding:12px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px #0004;max-width:94vw}
+  .toast button{border:none;border-radius:10px;padding:8px 12px;font:inherit;font-weight:800;cursor:pointer}
   .sectitle{font-weight:800;font-size:1.1rem;margin:6px 2px 0}
 </style>
 </head>
@@ -109,6 +134,7 @@
   <button class="iconbtn" id="voiceBtn" aria-label="Bật tắt giọng đọc">🔊</button></div>
 </header>
 
+<div class="toast hidden" id="toast"></div>
 <main>
   <div class="guide">
     <div class="owl" id="owl">🦖</div>
@@ -144,6 +170,7 @@
     <button class="btn orange" data-go="puzzles"><span>🧩</span> Luyện câu đố</button>
     <button class="btn" data-go="learn"><span>📚</span> Học từng quân cờ</button>
     <button class="btn" data-go="two"><span>👫</span> Hai người chơi</button>
+    <button class="btn green" data-go="online" style="background:#14a3a3;box-shadow:0 4px 0 #0c7a7a"><span>🌐</span> Chơi online với bạn bè</button>
     <div class="stats" id="stats"></div>
   </section>
 
@@ -153,10 +180,62 @@
   <!-- Danh sách câu đố -->
   <section id="puzzleList" class="hidden"><div class="plist" id="plist"></div></section>
 
+  <!-- ===== Online ===== -->
+  <section id="onLogin" class="hidden">
+    <div class="form">
+      <div class="tabs"><button id="tabLogin" class="on">Đăng nhập</button><button id="tabReg">Đăng ký</button></div>
+      <input id="onEmail" type="email" placeholder="Email (của bố mẹ)" autocomplete="email">
+      <input id="onPass" type="password" placeholder="Mật khẩu (ít nhất 6 ký tự)" autocomplete="current-password">
+      <div id="regExtra" class="hidden" style="display:grid;gap:10px">
+        <input id="onPass2" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password">
+        <input id="onName" maxlength="20" placeholder="Tên hiển thị, ví dụ: Nhật Minh" autocomplete="off">
+        <b>Hình đại diện</b><div class="avs" id="onAvs"></div>
+      </div>
+      <div class="controls"><button class="btn green" id="onSubmit">Đăng nhập</button></div>
+      <button class="linkbtn" id="onForgot">Quên mật khẩu?</button>
+      <div class="note">Tài khoản dùng email của bố mẹ. Chỉ bạn bè đã kết bạn bằng ID mới chơi và nhắn tin được với nhau.</div>
+    </div>
+  </section>
+
+  <section id="onHub" class="hidden" style="display:grid;gap:12px">
+    <div class="mecard">
+      <div class="av" id="meAv"></div>
+      <div style="flex:1;min-width:0"><div class="nm" id="meName"></div><div>ID của bạn: <b class="code" id="meCode"></b></div>
+        <div class="st" id="meStats"></div></div>
+      <button class="btn orange small" id="onLogout">Thoát</button>
+    </div>
+    <div id="invBox"></div>
+    <div id="reqBox"></div>
+    <div class="form">
+      <b>Kết bạn bằng ID</b>
+      <div style="display:flex;gap:8px"><input id="addCode" maxlength="6" placeholder="Nhập ID, ví dụ: K7M2QP" autocomplete="off" style="text-transform:uppercase"><button class="btn green" id="addBtn">Gửi</button></div>
+    </div>
+    <div class="sectitle">Bạn bè</div>
+    <div class="flist" id="friendList"></div>
+  </section>
+
+  <section id="onWait" class="hidden">
+    <div class="form" style="text-align:center">
+      <div style="font-size:3rem" id="waitAv"></div>
+      <div id="waitText" style="font-size:1.1rem"></div>
+      <div class="controls"><button class="btn orange" id="waitCancel">Hủy lời mời</button></div>
+    </div>
+  </section>
+
+  <section id="onChat" class="hidden" style="display:grid;gap:8px">
+    <div class="mecard"><div class="av" id="chatAv"></div><div class="nm" style="flex:1" id="chatName"></div>
+      <button class="btn small" id="chatPlay">⚔️ Mời chơi</button></div>
+    <div class="msgs" id="chatMsgs"></div>
+    <div class="quick" id="chatQuick"></div>
+    <div class="sendrow"><input id="chatInput" maxlength="200" placeholder="Nhắn tin..." autocomplete="off"><button class="btn green" id="chatSend">Gửi</button></div>
+    <div class="controls"><button class="btn orange small" id="chatBack">⬅️ Bạn bè</button><button class="btn red small" id="chatReport">🚩 Báo cáo</button><button class="btn red small" id="chatBlock">⛔ Chặn</button></div>
+  </section>
+
   <!-- Bàn cờ -->
   <section id="boardWrap" class="hidden" style="display:flex;flex-direction:column;gap:8px">
     <div class="levelrow" id="levelRow"></div>
     <div class="toggle" id="coachRow"><label><input type="checkbox" id="coachChk" checked> Khủng Long nhắc khi quân bị dọa</label></div>
+    <div class="onbar hidden" id="onlineBar"></div>
     <div class="captured" id="capTop"></div>
     <div class="board" id="board"></div>
     <div class="captured" id="capBottom"></div>
@@ -166,6 +245,18 @@
       <button class="btn orange" id="undoBtn">↩️ Đi lại</button>
       <button class="btn green" id="newBtn">🔄 Ván mới</button>
       <button class="btn red hidden" id="reviewBtn">📊 Xem lại ván</button>
+    </div>
+    <div class="controls hidden" id="onlineControls">
+      <button class="btn" id="ogChat">💬 Chat</button>
+      <button class="btn red" id="ogResign">🏳️ Đầu hàng</button>
+      <button class="btn red hidden" id="ogReview">📊 Xem lại ván</button>
+      <button class="btn green hidden" id="ogRematch">🔄 Ván nữa</button>
+      <button class="btn orange" id="ogBack">🌐 Bạn bè</button>
+    </div>
+    <div class="hidden" id="miniChat" style="display:grid;gap:6px">
+      <div class="msgs small" id="ogMsgs"></div>
+      <div class="quick" id="ogQuick"></div>
+      <div class="sendrow"><input id="ogInput" maxlength="200" placeholder="Nhắn tin..." autocomplete="off"><button class="btn green" id="ogSend">Gửi</button></div>
     </div>
     <div class="controls hidden" id="learnControls">
       <button class="btn orange" id="retryBtn">🔄 Làm lại</button>
@@ -328,7 +419,12 @@ function show(v){
   $('delForm').classList.toggle('hidden',v!=='delForm');
   $('lessonList').classList.toggle('hidden',v!=='lessonList');
   $('puzzleList').classList.toggle('hidden',v!=='puzzleList');
-  const onBoard=['bot','two','lesson','puzzle','review'].includes(v);
+  ['onLogin','onHub','onChat','onWait'].forEach(id=>$(id).classList.toggle('hidden',v!==id));
+  const onBoard=['bot','two','lesson','puzzle','review','online'].includes(v);
+  $('onlineBar').classList.toggle('hidden',v!=='online');
+  $('onlineControls').classList.toggle('hidden',v!=='online');
+  $('miniChat').classList.add('hidden');
+  if(v!=='online'&&v!=='review')flip=false;
   $('boardWrap').classList.toggle('hidden',!onBoard);
   $('playControls').classList.toggle('hidden',!(v==='bot'||v==='two'));
   $('learnControls').classList.toggle('hidden',v!=='lesson');
@@ -354,18 +450,21 @@ function goHome(){
 $('homeBtn').onclick=goHome;
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
   const g=b.dataset.go;
+  if(g==='online'){openOnline();return}
   if(g==='learn')openLessons(); else if(g==='puzzles')openPuzzleList(); else if(g==='daily')startDaily(); else startGame(g);
 });
 
 // ====== Vẽ bàn cờ chung ======
+let flip=false;
 function drawBoard(cells){
   const el=$('board');el.innerHTML='';
-  for(let r=8;r>=1;r--)for(let f=0;f<8;f++){
+  for(let ri=0;ri<8;ri++)for(let fi=0;fi<8;fi++){
+    const r=flip?ri+1:8-ri,f=flip?7-fi:fi;
     const sq=FILES[f]+r,c=cells(sq)||{};
     const d=document.createElement('div');
     d.className='sq '+((f+r)%2===0?'l':'d')+(c.cls?' '+c.cls:'');
     d.dataset.sq=sq;
-    if(f===0||r===1){const k=document.createElement('span');k.className='coord';k.textContent=(f===0?r:'')+(r===1?FILES[f]:'');d.appendChild(k)}
+    if(fi===0||ri===7){const k=document.createElement('span');k.className='coord';k.textContent=(fi===0?r:'')+(ri===7?FILES[f]:'');d.appendChild(k)}
     if(c.star){const s=document.createElement('span');s.className='star';s.textContent='⭐';d.appendChild(s)}
     if(c.piece){const p=document.createElement('span');p.className='piece '+c.piece.color;p.textContent=GLYPH[c.piece.type];d.appendChild(p)}
     if(c.target){const t=document.createElement('span');t.className=c.capture?'ring':'dot';d.appendChild(t)}
@@ -377,6 +476,7 @@ $('board').addEventListener('click',e=>{
   if(view==='lesson')lessonClick(s.dataset.sq);
   else if(view==='puzzle')puzzleClick(s.dataset.sq);
   else if(view==='bot'||view==='two')gameClick(s.dataset.sq);
+  else if(view==='online')onlineClick(s.dataset.sq);
 });
 function kingSq(g,color){for(const row of g.board())for(const p of row)if(p&&p.type==='k'&&p.color===color)return p.square}
 function boardCells(g,{selected,marks={}}={}){
@@ -574,6 +674,7 @@ $('hintBtn').onclick=async()=>{
 // ====== Xem lại ván ======
 let RV=null;
 $('reviewBtn').onclick=reviewGame;
+let rvColor='w',reviewFrom='bot';
 async function reviewGame(){
   const hist=game.history({verbose:true});
   if(hist.length<2)return;
@@ -592,7 +693,7 @@ async function reviewGame(){
   }
   const items=[];
   for(let i=0;i<hist.length;i++){
-    const m=hist[i];if(m.color!=='w')continue;
+    const m=hist[i];if(m.color!==rvColor)continue;
     const before=evals[i].cp, after=-evals[i+1].cp; // góc nhìn bên Trắng
     const loss=Math.max(0,before-after);
     const played=m.from+m.to+(m.promotion||'');
@@ -649,7 +750,7 @@ function jumpMistake(dir){
   const el=$('reviewList').querySelector(`[data-j="${k}"]`);if(el)el.scrollIntoView({block:'nearest'});
 }
 $('rvNext').onclick=()=>jumpMistake(1);$('rvPrev').onclick=()=>jumpMistake(-1);
-$('rvDone').onclick=()=>startGame('bot');
+$('rvDone').onclick=()=>{if(reviewFrom==='online'){rvColor='w';reviewFrom='bot';flip=false;openOnline()}else startGame('bot')};
 
 // ====== Câu đố ======
 let P=null; // {list,idx,g,step,sol,hints,failed,daily}
@@ -874,6 +975,7 @@ $('delOk').onclick=()=>{
 };
 $('delAns').addEventListener('keydown',e=>{if(e.key==='Enter')$('delOk').click()});
 $('delCancel').onclick=()=>{delId=null;openPlayers()};
+/*ONLINE*/
 openPlayers();
 }
 </script>
