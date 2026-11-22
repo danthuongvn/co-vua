@@ -55,7 +55,14 @@
   .btn.purple{background:#9b59ff;box-shadow:0 4px 0 #7337d6}
   .btn.red{background:var(--red);box-shadow:0 4px 0 #b83640}
   .btn:disabled{opacity:.5}
-  .captured{font-family:var(--pf);min-height:28px;font-size:1.4rem;letter-spacing:2px}
+  .captured{font-family:var(--pf);min-height:28px;font-size:1.3rem;letter-spacing:1px;flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+  .captured.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000}.captured.b{color:#222}
+  .prow{display:flex;align-items:center;gap:8px;min-height:34px}
+  .pname{font-weight:800;white-space:nowrap;max-width:45%;overflow:hidden;text-overflow:ellipsis}
+  .clock{margin-left:auto;font-family:ui-monospace,monospace;font-weight:800;font-size:1.25rem;background:#e9dfcb;color:#6b5b45;border-radius:10px;padding:4px 10px;min-width:92px;text-align:center}
+  .clock.active{background:#3b2f2f;color:#fff}
+  .clock.low.active{background:var(--red);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.7}}
   .menu{display:grid;gap:12px;margin-top:4px}
   .menu .btn{font-size:1.25rem;padding:18px;text-align:left;display:flex;align-items:center;gap:14px}
   .menu .btn span{font-size:1.9rem}
@@ -210,6 +217,7 @@
       <b>Kết bạn bằng ID</b>
       <div style="display:flex;gap:8px"><input id="addCode" maxlength="6" placeholder="Nhập ID, ví dụ: K7M2QP" autocomplete="off" style="text-transform:uppercase"><button class="btn green" id="addBtn">Gửi</button></div>
     </div>
+    <div class="levelrow" id="hubClock"></div>
     <div class="sectitle">Bạn bè</div>
     <div class="flist" id="friendList"></div>
   </section>
@@ -236,9 +244,10 @@
     <div class="levelrow" id="levelRow"></div>
     <div class="toggle" id="coachRow"><label><input type="checkbox" id="coachChk" checked> Khủng Long nhắc khi quân bị dọa</label></div>
     <div class="onbar hidden" id="onlineBar"></div>
-    <div class="captured" id="capTop"></div>
+    <div class="levelrow" id="setupRow"></div>
+    <div class="prow"><span class="pname" id="nameTop"></span><span class="captured" id="capTop"></span><span class="clock hidden" id="clockTop"></span></div>
     <div class="board" id="board"></div>
-    <div class="captured" id="capBottom"></div>
+    <div class="prow"><span class="pname" id="nameBottom"></span><span class="captured" id="capBottom"></span><span class="clock hidden" id="clockBottom"></span></div>
     <div class="think" id="thinkBox">🛑 Trước khi đi, tự hỏi: Chiếu được không? Ăn được gì không? Máy đang dọa gì?</div>
     <div class="controls" id="playControls">
       <button class="btn purple" id="hintBtn">💡 Gợi ý</button>
@@ -431,6 +440,8 @@ function show(v){
   $('puzzleControls').classList.toggle('hidden',v!=='puzzle');
   $('reviewPane').classList.toggle('hidden',v!=='review');
   $('levelRow').classList.toggle('hidden',v!=='bot');
+  $('setupRow').classList.toggle('hidden',!(v==='bot'||v==='two'));
+  if(v!=='bot'&&v!=='two'&&v!=='online'&&v!=='review'){$('nameTop').textContent='';$('nameBottom').textContent=''}
   $('coachRow').classList.toggle('hidden',v!=='bot');
   $('thinkBox').classList.toggle('hidden',v!=='bot');
   $('hintBtn').classList.toggle('hidden',v!=='bot');
@@ -515,7 +526,42 @@ function flipped(g){
 }
 
 // ====== Chơi cờ ======
-let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0;
+let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0,myColor='w',localOver=false,gameToken=0;
+// ====== Đồng hồ ======
+const TC=[{m:0,inc:0,label:'Không'},{m:5,inc:3,label:'5 phút'},{m:10,inc:5,label:'10 phút'},{m:15,inc:10,label:'15 phút'}];
+const fmtT=ms=>{ms=Math.max(0,ms);const sec=ms<10000?Math.ceil(ms/100)/10:Math.ceil(ms/1000);if(ms<10000)return '0:'+sec.toFixed(1).padStart(4,'0');return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
+let LC=null;
+function lcStart(tc){LC=tc&&tc.m?{w:tc.m*60000,b:tc.m*60000,inc:tc.inc*1000,running:'w',last:performance.now()}:null}
+function lcSwitch(to){if(!LC)return;const now=performance.now();if(LC.running){LC[LC.running]-=now-LC.last;LC[LC.running]+=LC.inc}LC.running=to;LC.last=now}
+function lcStop(){if(LC&&LC.running){LC[LC.running]-=performance.now()-LC.last;LC.running=null}}
+function lcRemaining(c){return !LC?null:LC[c]-(LC.running===c?performance.now()-LC.last:0)}
+function setClock(el,ms,active){if(ms==null){el.classList.add('hidden');return}el.classList.remove('hidden');el.textContent='⏱️ '+fmtT(ms);el.classList.toggle('active',!!active);el.classList.toggle('low',ms<30000)}
+function updateClocks(){
+  if(view==='bot'||view==='two'){
+    const bottom=mode==='bot'?myColor:'w',top=bottom==='w'?'b':'w';
+    setClock($('clockBottom'),lcRemaining(bottom),LC&&LC.running===bottom);setClock($('clockTop'),lcRemaining(top),LC&&LC.running===top);
+    if(LC&&LC.running&&!localOver&&!game.isGameOver()&&lcRemaining(LC.running)<=0)localTimeout(LC.running);
+  }else if(view==='online'&&typeof onlineClockTick==='function')onlineClockTick();
+  else{$('clockTop').classList.add('hidden');$('clockBottom').classList.add('hidden')}
+}
+function localTimeout(color){
+  lcStop();localOver=true;busy=false;LC[color]=0;progress.games++;
+  if(mode==='bot'){
+    if(color===myColor)say('Hết giờ rồi! Máy thắng ván này. Lần sau con nhớ để ý đồng hồ nhé.');
+    else{progress.wins++;say(`Máy hết giờ! ${fullName()} thắng rồi!`,{happy:true});confetti();sfx.win()}
+    $('reviewBtn').classList.remove('hidden');
+  }else{say(`Bên ${color==='w'?'Trắng':'Đen'} hết giờ! Bên ${color==='w'?'Đen':'Trắng'} thắng.`,{happy:true});sfx.win()}
+  save();updateClocks();
+}
+setInterval(updateClocks,200);
+function renderSetup(){
+  const colorBtns=mode==='bot'?'Con cầm: '+[['w','⚪ Trắng'],['b','⚫ Đen'],['r','🎲']].map(([k,l])=>`<button data-col="${k}" class="${(progress.color||'w')===k?'on':''}">${l}</button>`).join('')+'<br>':'';
+  $('setupRow').innerHTML=colorBtns+'⏱️ Đồng hồ: '+TC.map((t,i)=>`<button data-tc="${i}" class="${(progress.tc||0)===i?'on':''}">${t.label}</button>`).join('');
+  $('setupRow').querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{progress.color=b.dataset.col;save();renderSetup();
+    if(game.history().length===0||game.isGameOver()||localOver)startGame(mode);else say('Màu quân mới sẽ áp dụng từ ván sau nhé.')});
+  $('setupRow').querySelectorAll('[data-tc]').forEach(b=>b.onclick=()=>{progress.tc=+b.dataset.tc;save();renderSetup();
+    if(game.history().length===0||game.isGameOver()||localOver)startGame(mode);else say('Đồng hồ mới sẽ áp dụng từ ván sau nhé.')});
+}
 function renderLevels(){
   $('levelRow').innerHTML='Máy: '+LEVELS.map((l,i)=>`<button data-lv="${i}" class="${i===progress.level?'on':''}">${l.name}</button>`).join('');
   $('levelRow').querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -528,9 +574,13 @@ function renderLevels(){
 $('coachChk').onchange=e=>{progress.coach=e.target.checked;save();
   say(progress.coach?'Khủng Long sẽ nhắc khi quân của con bị dọa.':'Khủng Long sẽ im lặng để con tự nghĩ. Nhớ tự hỏi 3 câu trước khi đi nhé!')};
 function startGame(m){
-  mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;startedLevel=progress.level;
-  show(m);renderLevels();$('coachChk').checked=!!progress.coach;renderGame();
-  if(m==='bot'){Engine.init();say(shortName()+' cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!')}
+  mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;startedLevel=progress.level;localOver=false;gameToken++;
+  const pc=progress.color||'w';myColor=m==='bot'?(pc==='r'?(Math.random()<.5?'w':'b'):pc):'w';
+  show(m);flip=m==='bot'&&myColor==='b';renderLevels();renderSetup();$('coachChk').checked=!!progress.coach;
+  lcStart(TC[progress.tc||0]);renderGame();updateClocks();
+  if(m==='bot'){Engine.init();
+    if(myColor==='w')say(shortName()+' cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!');
+    else{say(shortName()+' cầm quân Đen, máy đi trước nhé.');busy=true;const t=gameToken;setTimeout(()=>botTurn(t),700)}}
   else say('Hai bạn chơi cùng nhau nhé! Bên Trắng đi trước.');
 }
 function renderGame(){
@@ -540,15 +590,23 @@ function renderGame(){
   drawBoard(boardCells(game,{selected,marks}));
   const count={w:{},b:{}};
   for(const m of game.history({verbose:true}))if(m.captured){const col=m.color==='w'?'b':'w';count[col][m.captured]=(count[col][m.captured]||0)+1}
-  const fmt=col=>['q','r','b','n','p'].map(t=>GLYPH[t].repeat(count[col][t]||0)).join('');
-  $('capTop').textContent=fmt('w');$('capBottom').textContent=fmt('b');
-  $('capTop').style.color='#999';$('capBottom').style.color='#222';
+  const bottom=mode==='bot'?myColor:'w',top=bottom==='w'?'b':'w';
+  setCaptured(count,bottom);
+  const p=curPlayer();
+  $('nameBottom').textContent=mode==='bot'?((p?p.avatar+' ':'')+shortName()):'⚪ Trắng';
+  $('nameTop').textContent=mode==='bot'?'🤖 Máy · '+LEVELS[startedLevel].name.split(' ').slice(1).join(' '):'⚫ Đen';
 }
-const sideName=c=>mode==='bot'?(c==='w'?'con':'máy'):(c==='w'?'bên Trắng':'bên Đen');
+function setCaptured(count,bottom){ // dưới: quân đối phương mình đã ăn; trên: quân của mình bị ăn
+  const top=bottom==='w'?'b':'w';
+  const fmt=col=>['q','r','b','n','p'].map(t=>GLYPH[t].repeat(count[col][t]||0)).join('');
+  $('capBottom').textContent=fmt(top);$('capBottom').className='captured '+top;
+  $('capTop').textContent=fmt(bottom);$('capTop').className='captured '+bottom;
+}
+const sideName=c=>mode==='bot'?(c===myColor?'con':'máy'):(c==='w'?'bên Trắng':'bên Đen');
 function gameClick(sq){
-  if(busy||game.isGameOver())return;
+  if(busy||game.isGameOver()||localOver)return;
   const turn=game.turn();
-  if(mode==='bot'&&turn!=='w')return;
+  if(mode==='bot'&&turn!==myColor)return;
   const p=game.get(sq);
   if(selected){const mv=game.moves({square:selected,verbose:true}).find(m=>m.to===sq);if(mv){doMove(mv);return}}
   if(p&&p.color===turn){
@@ -564,7 +622,7 @@ function gameClick(sq){
 }
 function doMove(mv){
   const res=game.move({from:mv.from,to:mv.to,promotion:'q'});
-  selected=null;hint=null;lastMove=res;
+  selected=null;hint=null;lastMove=res;lcSwitch(game.turn());
   res.captured?sfx.capture():sfx.move();
   renderGame();
   if(endCheck())return;
@@ -573,7 +631,7 @@ function doMove(mv){
     const danger=progress.coach?threats(game):[];
     if(danger.length){const d=danger[0];msg+=` Ôi, quân ${NAMES[game.get(d.sq).type]} của con ở ${d.sq} có thể bị ăn mất. Con có thể bấm Đi lại.`}
     say(msg.trim()||'Máy đang suy nghĩ...',{voice:!!msg.trim()});
-    busy=true;setTimeout(botTurn,danger.length?1500:500);
+    busy=true;const t=gameToken;setTimeout(()=>botTurn(t),danger.length?1500:500);
   }else say((praise(res)+' Đến lượt '+sideName(game.turn())+'.').trim());
 }
 function praise(m){
@@ -604,7 +662,8 @@ function ownBotMove(lv){
   let pick,bs=-1e9;for(const m of moves){const s=scoreMove(m,lv.noise);if(s>bs){bs=s;pick=m}}
   return pick;
 }
-async function botTurn(){
+async function botTurn(tok){
+  if(tok!==gameToken||localOver)return;
   const lv=LEVELS[startedLevel];
   let mv=null;
   if(lv.kind==='sf'){
@@ -612,9 +671,10 @@ async function botTurn(){
     catch(e){}
     await new Promise(r=>setTimeout(r,250));
   }
+  if(tok!==gameToken||localOver||view!=='bot')return;
   if(!mv)mv=ownBotMove(LEVELS[1]&&lv.kind==='sf'?LEVELS[1]:lv);
   const res=game.move({from:mv.from,to:mv.to,promotion:mv.promotion||'q'});
-  lastMove=res;busy=false;
+  lastMove=res;busy=false;lcSwitch(game.turn());
   res.captured?sfx.capture():sfx.move();
   renderGame();
   if(endCheck())return;
@@ -629,10 +689,10 @@ async function botTurn(){
 }
 function endCheck(){
   if(!game.isGameOver())return false;
-  progress.games++;
+  lcStop();progress.games++;
   if(game.isCheckmate()){
     const loser=game.turn();
-    if(mode==='bot'&&loser==='b'){
+    if(mode==='bot'&&loser!==myColor){
       progress.wins++;progress.levelWins[startedLevel]=(progress.levelWins[startedLevel]||0)+1;
       const next=startedLevel<LEVELS.length-1&&progress.levelWins[startedLevel]>=2?` Con đã thắng mức này ${progress.levelWins[startedLevel]} lần, thử mức ${LEVELS[startedLevel+1].name.split(' ')[1]} xem!`:'';
       say(`Chiếu hết! ${fullName()} thắng rồi!`+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
@@ -647,14 +707,15 @@ function endCheck(){
 $('newBtn').onclick=()=>startGame(mode);
 $('undoBtn').onclick=()=>{
   if(busy)return;
-  if(mode==='bot'){if(game.turn()==='w'&&game.history().length>=2){game.undo();game.undo()}else if(game.turn()==='b')game.undo()}
+  if(localOver)return;
+  if(mode==='bot'){const minLen=myColor==='b'?3:2;if(game.turn()===myColor&&game.history().length>=minLen){game.undo();game.undo()}else if(game.turn()!==myColor&&game.history().length>=(myColor==='b'?2:1))game.undo()}
   else game.undo();
   const h=game.history({verbose:true});lastMove=h[h.length-1]||null;selected=null;hint=null;renderGame();
   $('reviewBtn').classList.toggle('hidden',!(mode==='bot'&&game.history().length>=6));
   say('Mình đi lại nhé. Suy nghĩ thật kỹ rồi đi.');
 };
 $('hintBtn').onclick=async()=>{
-  if(busy||game.isGameOver()||game.turn()!=='w')return;
+  if(busy||game.isGameOver()||localOver||game.turn()!==myColor)return;
   busy=true;say('Khủng Long đang suy nghĩ...',{voice:false});
   let u=null;
   try{const a=await Engine.analyse(game.fen(),{depth:10});u=a.best}catch(e){}
@@ -673,7 +734,7 @@ $('hintBtn').onclick=async()=>{
 
 // ====== Xem lại ván ======
 let RV=null;
-$('reviewBtn').onclick=reviewGame;
+$('reviewBtn').onclick=()=>{rvColor=mode==='bot'?myColor:'w';reviewFrom='bot';flip=rvColor==='b';reviewGame()};
 let rvColor='w',reviewFrom='bot';
 async function reviewGame(){
   const hist=game.history({verbose:true});
@@ -750,7 +811,7 @@ function jumpMistake(dir){
   const el=$('reviewList').querySelector(`[data-j="${k}"]`);if(el)el.scrollIntoView({block:'nearest'});
 }
 $('rvNext').onclick=()=>jumpMistake(1);$('rvPrev').onclick=()=>jumpMistake(-1);
-$('rvDone').onclick=()=>{if(reviewFrom==='online'){rvColor='w';reviewFrom='bot';flip=false;openOnline()}else startGame('bot')};
+$('rvDone').onclick=()=>{const from=reviewFrom;rvColor='w';reviewFrom='bot';flip=false;if(from==='online')openOnline();else startGame('bot')};
 
 // ====== Câu đố ======
 let P=null; // {list,idx,g,step,sol,hints,failed,daily}

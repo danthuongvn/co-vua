@@ -17,7 +17,7 @@ const FB={
 };
 const TS=()=>firebase.database.ServerValue.TIMESTAMP;
 const ref=p=>FB.db.ref(p);
-let ME=null,MYP=null,FRIENDS={},STATUS={},LISTENERS=[],UNREAD={},onlineBooted=false,authRegistering=false,authKnown=null,authResolve=null;
+let SRV_OFFSET=0,ME=null,MYP=null,FRIENDS={},STATUS={},LISTENERS=[],UNREAD={},onlineBooted=false,authRegistering=false,authKnown=null,authResolve=null;
 authKnown=new Promise(r=>authResolve=r);
 function listen(r,ev,fn){r.on(ev,fn);LISTENERS.push(()=>r.off(ev,fn))}
 function stopAll(){LISTENERS.forEach(f=>{try{f()}catch(e){}});LISTENERS=[]}
@@ -72,6 +72,7 @@ async function startSession(){
   // trạng thái online
   const st=ref('status/'+ME.uid);
   listen(ref('.info/connected'),'value',s=>{if(s.val()===true){st.onDisconnect().set({online:false,ts:TS()});st.set({online:true,ts:TS()})}});
+  listen(ref('.info/serverTimeOffset'),'value',s=>{SRV_OFFSET=s.val()||0});
   listen(ref('users/'+ME.uid),'value',s=>{MYP=s.val();renderMe();if((view==='onWait'||view==='onLogin')&&!OG.waiting)openHub()});
   listen(ref('friends/'+ME.uid),'value',s=>{FRIENDS=s.val()||{};watchFriends();renderFriends()});
   listen(ref('friendRequests/'+ME.uid),'value',s=>renderRequests(s.val()||{}));
@@ -147,7 +148,12 @@ $('onForgot').onclick=async()=>{
 $('onLogout').onclick=async()=>{try{await ref('status/'+ME.uid).set({online:false,ts:TS()})}catch(e){}FB.auth.signOut()};
 
 // ---- Sảnh: hồ sơ, bạn bè, lời mời ----
-function openHub(){show('onHub');renderMe();renderFriends();
+function renderHubClock(){
+  const cur=progress.onlineTc===undefined?2:progress.onlineTc;
+  $('hubClock').innerHTML='⏱️ Đồng hồ khi mời: '+TC.map((t,i)=>`<button data-otc="${i}" class="${cur===i?'on':''}">${t.label}</button>`).join('');
+  $('hubClock').querySelectorAll('[data-otc]').forEach(b=>b.onclick=()=>{progress.onlineTc=+b.dataset.otc;save();renderHubClock()});
+}
+function openHub(){show('onHub');renderMe();renderFriends();renderHubClock();
   say(MYP?`Chào ${MYP.name}! Bấm ⚔️ để mời bạn chơi, 💬 để nhắn tin.`:'Đang tải...',{voice:false})}
 function renderMe(){
   if(!MYP)return;
@@ -249,7 +255,10 @@ async function inviteFriend(fid){
   const gid=ref('games').push().key,meWhite=Math.random()<.5;
   const names={[ME.uid]:{name:MYP.name,avatar:MYP.avatar},[fid]:{name:f.name,avatar:f.avatar}};
   try{
-    await ref('games/'+gid).set({white:meWhite?ME.uid:fid,black:meWhite?fid:ME.uid,status:'waiting',moves:'',createdAt:TS(),by:ME.uid,names});
+    const tc=TC[progress.onlineTc===undefined?2:progress.onlineTc]||TC[0];
+    const g={white:meWhite?ME.uid:fid,black:meWhite?fid:ME.uid,status:'waiting',moves:'',createdAt:TS(),by:ME.uid,names};
+    if(tc.m)Object.assign(g,{tc:{m:tc.m,inc:tc.inc},clock:{w:tc.m*60000,b:tc.m*60000}});
+    await ref('games/'+gid).set(g);
     await ref(`invites/${fid}/${ME.uid}`).set({gameId:gid,name:MYP.name,avatar:MYP.avatar,ts:TS()});
   }catch(e){say('Chưa gửi được lời mời chơi.');return}
   if(CH&&CH.off){CH.off();CH=null}
@@ -276,7 +285,7 @@ function renderInvites(inv){
 // ---- Ván cờ online ----
 function leaveGame(){if(OG.off)OG.off();OG.off=null;if(OG.chatOff)OG.chatOff();OG.chatOff=null;OG.gid=null;OG.data=null;OG.waiting=false}
 function watchGame(gid,fid){
-  leaveGame();OG.gid=gid;OG.opp=fid;OG.counted=!!(lsGet('covua-counted')||{})[gid];OG.waiting=true;OG.lastLen=-1;
+  leaveGame();OG.timeoutSent=false;OG.gid=gid;OG.opp=fid;OG.counted=!!(lsGet('covua-counted')||{})[gid];OG.waiting=true;OG.lastLen=-1;
   const r=ref('games/'+gid);
   const fn=s=>{const d=s.val();if(!d)return;OG.data=d;
     if(d.status==='waiting')return;
@@ -303,7 +312,11 @@ function renderOnline(){
   if(view!=='online'||!OG.chess)return;
   const c=OG.chess,d=OG.data,h=c.history({verbose:true}),last=h[h.length-1];
   const marks={};if(last){marks[last.from]='last';marks[last.to]='last'}
+  flip=OG.myColor==='b';
   const myTurn=d.status==='active'&&c.turn()===OG.myColor;
+  const count={w:{},b:{}};for(const m of h)if(m.captured){const col=m.color==='w'?'b':'w';count[col][m.captured]=(count[col][m.captured]||0)+1}
+  setCaptured(count,OG.myColor);
+  {const nn=d.names||{},a=nn[ME.uid]||{},o=nn[OG.opp]||{};$('nameBottom').textContent=(a.avatar||'')+' '+(a.name||'');$('nameTop').textContent=(o.avatar||'')+' '+(o.name||'')}
   drawBoard(boardCells(c,{selected:myTurn?OG.sel:null,marks}));
   const on=STATUS[OG.opp];
   const n=d.names||{},me=n[ME.uid]||{},op=n[OG.opp]||{};
@@ -320,9 +333,13 @@ function onlineClick(sq){
   if(p&&p.color===OG.myColor){OG.sel=sq;renderOnline()}else{OG.sel=null;renderOnline()}
 }
 async function onlineMove(mv){
+  const myLeft=onlineRemaining(OG.myColor);
+  if(myLeft!==null&&myLeft<=0)return;
   const c=OG.chess,res=c.move({from:mv.from,to:mv.to,promotion:'q'});OG.sel=null;
   const moves=c.history({verbose:true}).map(m=>m.from+m.to+(m.promotion||'')).join(' ');
   const upd={moves,lastTs:TS()};
+  const d=OG.data;
+  if(d&&d.clock&&d.tc){upd['clock/'+OG.myColor]=Math.max(0,myLeft)+d.tc.inc*1000}
   if(c.isGameOver()){upd.status='over';
     if(c.isCheckmate()){upd.result=OG.myColor==='w'?'white':'black';upd.reason='checkmate'}
     else{upd.result='draw';upd.reason=c.isStalemate()?'stalemate':'draw'}}
@@ -331,12 +348,27 @@ async function onlineMove(mv){
 }
 function onlineOver(d){
   const myRes=d.result==='draw'?'draw':((d.result==='white')===(OG.myColor==='w')?'win':'loss');
-  const why={checkmate:'Chiếu hết!',resign:'Có người đầu hàng.',stalemate:'Hết nước đi, hòa.',draw:'Hòa.'}[d.reason]||'';
+  const why={checkmate:'Chiếu hết!',resign:'Có người đầu hàng.',stalemate:'Hết nước đi, hòa.',draw:'Hòa.',timeout:'Hết giờ!'}[d.reason]||'';
   if(!OG.counted){OG.counted=true;const cnt=lsGet('covua-counted')||{};cnt[OG.gid]=1;lsSet('covua-counted',cnt);
     const key={win:'wins',loss:'losses',draw:'draws'}[myRes];
     ref(`users/${ME.uid}/stats/${key}`).transaction(v=>(v||0)+1).catch(()=>{});
     if(myRes==='win'){confetti();sfx.win()}}
   say(why+' '+(myRes==='win'?`Bạn thắng ${oppName()} rồi!`:myRes==='loss'?`${oppName()} thắng ván này. Bấm Xem lại ván để học từ lỗi nhé!`:'Ván cờ hòa!'),{happy:myRes==='win'});
+}
+function onlineRemaining(c){
+  const d=OG.data;if(!d||!d.clock)return null;
+  let v=d.clock[c];
+  if(d.status==='active'&&OG.chess&&OG.chess.turn()===c){const since=d.lastTs||d.startedAt;if(since)v-=Date.now()+SRV_OFFSET-since}
+  return v;
+}
+function onlineClockTick(){
+  const d=OG.data;
+  if(!d||!d.clock){$('clockTop').classList.add('hidden');$('clockBottom').classList.add('hidden');return}
+  const me=OG.myColor,op=me==='w'?'b':'w',turn=OG.chess?OG.chess.turn():'w',act=d.status==='active';
+  setClock($('clockBottom'),onlineRemaining(me),act&&turn===me);setClock($('clockTop'),onlineRemaining(op),act&&turn===op);
+  if(act&&!OG.timeoutSent){const left=onlineRemaining(turn);
+    if(left!==null&&left<=-300){OG.timeoutSent=true; // chờ thêm 0,3 giây cho chắc
+      ref('games/'+OG.gid).update({status:'over',result:turn==='w'?'black':'white',reason:'timeout',['clock/'+turn]:0}).catch(()=>{OG.timeoutSent=false})}}
 }
 $('ogResign').onclick=()=>{
   if(!OG.data||OG.data.status!=='active')return;

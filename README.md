@@ -7,6 +7,7 @@ Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Bạn Khủng
 ## Tính năng
 - **Câu đố hôm nay**: 5 câu mỗi ngày (2 chiếu hết 1 nước, 2 thắng quân, 1 chiếu hết 2 nước).
 - **Luyện câu đố**: 250 câu chia theo chủ đề: Chiếu hết 1 nước, Ăn quân miễn phí, Đòn đôi, Chiếu hết 2 nước. Có gợi ý 2 bước, chấm 1–3 sao.
+- **Đồng hồ cờ** cho cả hai bên (5, 10, 15 phút, có cộng giây mỗi nước) khi chơi với máy, hai người và online. Quân của mình luôn ở phía dưới; chơi với máy chọn được cầm Trắng, Đen hoặc ngẫu nhiên.
 - **Chơi với máy**: 5 mức (Dễ, Vừa, Khá, Giỏi, Cao thủ). Ba mức trên dùng Stockfish. Thắng 2 lần thì Cú gợi ý lên mức.
 - **Xem lại ván**: sau mỗi ván, máy chấm từng nước của bé (Tuyệt vời / Tốt / Chưa chuẩn / Sai lầm) và chỉ nước tốt hơn ngay trên bàn cờ.
 - **Thói quen suy nghĩ**: nhắc 3 câu hỏi trước mỗi nước; có thể tắt lời nhắc quân bị dọa để bé tự nghĩ.
