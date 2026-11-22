@@ -4406,12 +4406,12 @@ function bootOnline(){
     if(!u){lsSet('covua-online',0);if(['onHub','onChat','online','onWait'].includes(view))openLogin();return}
     lsSet('covua-online',1);
     if(authRegistering)return; // đang đăng ký, hồ sơ sẽ được tạo xong rồi mới vào
-    await startSession();
+    try{await startSession()}catch(e){const k=errKey(e);console.error('session',e);show('onLogin');say(AUTH_ERR[k]||('Có lỗi: '+k));}
   });
 }
 async function startSession(){
-  const snap=await ref('users/'+ME.uid).get();
-  if(!snap.exists()){ // tài khoản cũ chưa có hồ sơ (hiếm): tạo hồ sơ
+  const snap=await ref('users/'+ME.uid).get().catch(e=>{throw e});
+  if(!snap.exists()){ // tài khoản chưa có hồ sơ (ví dụ lần đăng ký trước bị lỗi giữa chừng): tạo hồ sơ
     const p=curPlayer();await createProfile(p?p.name:'Bạn mới',p?p.avatar:'🦁');
   }
   // trạng thái online
@@ -4453,7 +4453,12 @@ $('tabLogin').onclick=()=>setRegMode(false);$('tabReg').onclick=()=>setRegMode(t
 const AUTH_ERR={'auth/email-already-in-use':'Email này đã có tài khoản. Bấm Đăng nhập nhé.','auth/invalid-email':'Email chưa đúng.',
   'auth/weak-password':'Mật khẩu cần ít nhất 6 ký tự.','auth/invalid-credential':'Email hoặc mật khẩu chưa đúng.','auth/wrong-password':'Email hoặc mật khẩu chưa đúng.',
   'auth/user-not-found':'Email hoặc mật khẩu chưa đúng.','auth/too-many-requests':'Thử sai nhiều quá, đợi một lúc rồi thử lại nhé.',
-  'auth/network-request-failed':'Mất mạng rồi, kiểm tra kết nối nhé.','auth/missing-password':'Bạn nhớ nhập mật khẩu nhé.'};
+  'auth/network-request-failed':'Mất mạng rồi, kiểm tra kết nối nhé.','auth/missing-password':'Bạn nhớ nhập mật khẩu nhé.',
+  'auth/operation-not-allowed':'Firebase chưa bật đăng nhập bằng Email/Password (Authentication → Sign-in method).',
+  'auth/unauthorized-domain':'Firebase chưa cho phép trang này (Authentication → Settings → Authorized domains → thêm danthuongvn.github.io).',
+  'auth/configuration-not-found':'Firebase chưa bật Authentication. Vào Authentication → Get started.',
+  'PERMISSION_DENIED':'Cơ sở dữ liệu chưa có quy tắc mới. Dán file database.rules.json vào Realtime Database → Rules → Publish, rồi Đăng nhập lại.'};
+const errKey=e=>{const m=String(e&&(e.code||e.message)||e);return /permission/i.test(m)?'PERMISSION_DENIED':(e&&e.code)||m};
 $('onSubmit').onclick=async()=>{
   const email=$('onEmail').value.trim(),pass=$('onPass').value;
   if(!email||!pass){say('Bạn nhập email và mật khẩu nhé.');return}
@@ -4474,7 +4479,8 @@ $('onSubmit').onclick=async()=>{
     $('onPass').value='';$('onPass2').value='';
   }catch(e){
     authRegistering=false;
-    say(e.code==='x'?e.message:(AUTH_ERR[e.code]||'Có lỗi, thử lại nhé.'));
+    const k=errKey(e);console.error('online auth error',e);
+    say(e.code==='x'?e.message:(AUTH_ERR[k]||('Có lỗi: '+k+'. Chụp màn hình gửi bố mẹ nhé.')));
   }finally{$('onSubmit').disabled=false}
 };
 $('onForgot').onclick=async()=>{
