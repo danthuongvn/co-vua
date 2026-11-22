@@ -5,7 +5,7 @@ const FB={
   load(){
     if(this.ready)return this.ready;
     const add=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej('load '+src);document.head.appendChild(s)});
-    this.ready=add('firebase-config.js')
+    this.ready=add('firebase-config.js?t='+Date.now())
       .then(()=>{if(!window.FIREBASE_CONFIG||!window.FIREBASE_CONFIG.apiKey)throw 'noconfig'})
       .then(()=>add('vendor/firebase-app-compat.js'))
       .then(()=>add('vendor/firebase-auth-compat.js'))
