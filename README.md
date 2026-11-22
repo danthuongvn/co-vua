@@ -10,7 +10,8 @@ Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Bạn Khủng
 - **Chơi với máy**: 5 mức (Dễ, Vừa, Khá, Giỏi, Cao thủ). Ba mức trên dùng Stockfish. Thắng 2 lần thì Cú gợi ý lên mức.
 - **Xem lại ván**: sau mỗi ván, máy chấm từng nước của bé (Tuyệt vời / Tốt / Chưa chuẩn / Sai lầm) và chỉ nước tốt hơn ngay trên bàn cờ.
 - **Thói quen suy nghĩ**: nhắc 3 câu hỏi trước mỗi nước; có thể tắt lời nhắc quân bị dọa để bé tự nghĩ.
-- **Học từng quân cờ**, **Hai người chơi**, giọng đọc tiếng Việt, lưu tiến độ trên trình duyệt. Không quảng cáo, không đăng nhập.
+- **Nhiều người chơi trên một máy**: mỗi người có tên, hình đại diện và tiến độ riêng; khi vào chỉ cần bấm chọn tên.
+- **Học từng quân cờ**, **Hai người chơi**, giọng đọc tiếng Việt, lưu tiến độ trên trình duyệt. Không quảng cáo, không cần mật khẩu.
 
 ## Cấu trúc
 - `index.html` – web hoàn chỉnh (đã ghép sẵn chess.js).

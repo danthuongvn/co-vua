@@ -84,14 +84,29 @@
   .rv b{min-width:2.2em}
   .summary{display:flex;justify-content:space-around;background:#fff;border-radius:14px;padding:10px;box-shadow:0 3px 0 #e6d3b0;font-weight:700;text-align:center}
   .summary div span{display:block;font-size:1.5rem}
+  header .right{display:flex;gap:8px}
+  .players{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .pcard{position:relative;background:#fff;border-radius:18px;padding:16px 8px;text-align:center;cursor:pointer;box-shadow:0 4px 0 #e6d3b0;border:none;font-family:inherit;color:inherit}
+  .pcard.last{outline:3px solid var(--green)}
+  .pcard .av{font-size:3rem;line-height:1.1}
+  .pcard .nm{font-weight:800;font-size:1.15rem;margin-top:4px}
+  .pcard .st{font-size:.85rem;opacity:.75;margin-top:2px}
+  .pcard .del{position:absolute;top:6px;right:6px;border:none;background:#f3e6cc;border-radius:50%;width:30px;height:30px;font-size:.9rem;cursor:pointer}
+  .pcard.add{border:3px dashed #e0c89a;box-shadow:none;background:transparent}
+  .form{background:#fff;border-radius:18px;padding:16px;box-shadow:0 4px 0 #e6d3b0;display:grid;gap:12px}
+  .form input{font:inherit;font-size:1.15rem;padding:12px;border-radius:12px;border:2px solid #e6d3b0;width:100%}
+  .avs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .avs button{font-size:1.9rem;border:none;background:#faf5ea;border-radius:12px;padding:6px 0;cursor:pointer}
+  .avs button.on{outline:3px solid var(--green);background:#e6f6ea}
   .sectitle{font-weight:800;font-size:1.1rem;margin:6px 2px 0}
 </style>
 </head>
 <body>
 <header>
   <button class="iconbtn" id="homeBtn" aria-label="Về trang chủ">🏠</button>
-  <h1>♞ Cờ Vua của Minh</h1>
-  <button class="iconbtn" id="voiceBtn" aria-label="Bật tắt giọng đọc">🔊</button>
+  <h1 id="title">♞ Cờ Vua</h1>
+  <div class="right"><button class="iconbtn" id="playerBtn" aria-label="Đổi người chơi">👤</button>
+  <button class="iconbtn" id="voiceBtn" aria-label="Bật tắt giọng đọc">🔊</button></div>
 </header>
 
 <main>
@@ -99,6 +114,18 @@
     <div class="owl" id="owl">🦖</div>
     <div class="bubble" id="bubble">Chào con!</div>
   </div>
+
+  <!-- Chọn người chơi -->
+  <section id="playerPick" class="hidden"><div class="players" id="players"></div></section>
+  <section id="playerForm" class="hidden">
+    <div class="form">
+      <label for="pname"><b>Tên người chơi</b></label>
+      <input id="pname" maxlength="20" placeholder="Ví dụ: Nhật Minh" autocomplete="off">
+      <b>Chọn hình đại diện</b>
+      <div class="avs" id="avs"></div>
+      <div class="controls"><button class="btn green" id="pSave">✅ Lưu</button><button class="btn orange" id="pCancel">Thôi</button></div>
+    </div>
+  </section>
 
   <!-- Trang chủ -->
   <section id="home" class="menu">
@@ -3563,9 +3590,20 @@ const FILES='abcdefgh';
 const $=id=>document.getElementById(id);
 
 // ====== Lưu tiến độ ======
-let progress={lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true};
-try{const s=JSON.parse(localStorage.getItem('covua-progress'));if(s)progress=Object.assign(progress,s)}catch(e){}
-function save(){try{localStorage.setItem('covua-progress',JSON.stringify(progress))}catch(e){}}
+const blankProgress=()=>({lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true});
+let progress=blankProgress();
+let players={list:[],current:null};
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+players=lsGet('covua-players')||players;
+// chuyển tiến độ cũ (trước khi có nhiều người chơi) sang người chơi "Nhật Minh"
+if(!players.list.length){const old=lsGet('covua-progress');
+  if(old){const id='p'+Date.now();players.list.push({id,name:'Nhật Minh',avatar:'🦁'});players.current=id;lsSet('covua-progress-'+id,old);lsSet('covua-players',players)}}
+const curPlayer=()=>players.list.find(p=>p.id===players.current)||null;
+const fullName=()=>(curPlayer()||{}).name||'con';
+const shortName=()=>{const n=fullName().trim().split(/\s+/);return n[n.length-1]||'con'};
+function loadProgress(id){progress=Object.assign(blankProgress(),lsGet('covua-progress-'+id)||{})}
+function save(){if(players.current)lsSet('covua-progress-'+players.current,progress)}
 
 // ====== Giọng đọc & âm thanh ======
 let voiceOn=true;
@@ -3643,6 +3681,8 @@ let view='home';
 function show(v){
   view=v;
   $('home').classList.toggle('hidden',v!=='home');
+  $('playerPick').classList.toggle('hidden',v!=='players');
+  $('playerForm').classList.toggle('hidden',v!=='playerForm');
   $('lessonList').classList.toggle('hidden',v!=='lessonList');
   $('puzzleList').classList.toggle('hidden',v!=='puzzleList');
   const onBoard=['bot','two','lesson','puzzle','review'].includes(v);
@@ -3661,11 +3701,12 @@ function show(v){
 }
 function solvedCount(){return Object.keys(progress.solved).length}
 function goHome(){
+  if(!curPlayer()){openPlayers();return}
   show('home');
   const today=todayKey(), d=progress.daily[today]||[];
   $('stats').innerHTML=`🧩 Câu đố đã giải: <b>${solvedCount()}</b>/${PUZ.length} &nbsp; 🗓️ Hôm nay: <b>${d.length}</b>/5<br>`+
     `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}`;
-  say(d.length>=5?'Nhật Minh đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?':'Chào Nhật Minh! Mình là Khủng Long Xanh. Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!');
+  say(d.length>=5?`${fullName()} đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?`:`Chào ${fullName()}! Mình là Khủng Long Xanh. Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!`);
 }
 $('homeBtn').onclick=goHome;
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
@@ -3746,7 +3787,7 @@ $('coachChk').onchange=e=>{progress.coach=e.target.checked;save();
 function startGame(m){
   mode=m;game=new Chess();selected=null;lastMove=null;hint=null;busy=false;lastExplained=null;startedLevel=progress.level;
   show(m);renderLevels();$('coachChk').checked=!!progress.coach;renderGame();
-  if(m==='bot'){Engine.init();say('Minh cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!')}
+  if(m==='bot'){Engine.init();say(shortName()+' cầm quân Trắng và đi trước. Chọn mức của máy ở trên. Thắng xong thì thử mức khó hơn nhé!')}
   else say('Hai bạn chơi cùng nhau nhé! Bên Trắng đi trước.');
 }
 function renderGame(){
@@ -3851,7 +3892,7 @@ function endCheck(){
     if(mode==='bot'&&loser==='b'){
       progress.wins++;progress.levelWins[startedLevel]=(progress.levelWins[startedLevel]||0)+1;
       const next=startedLevel<LEVELS.length-1&&progress.levelWins[startedLevel]>=2?` Con đã thắng mức này ${progress.levelWins[startedLevel]} lần, thử mức ${LEVELS[startedLevel+1].name.split(' ')[1]} xem!`:'';
-      say('Chiếu hết! Nhật Minh thắng rồi!'+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
+      say(`Chiếu hết! ${fullName()} thắng rồi!`+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
     }else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con! Bấm Xem lại ván để tìm xem mình sai ở đâu nhé.');
     else{say(`Chiếu hết! ${loser==='w'?'Bên Đen':'Bên Trắng'} thắng rồi!`,{happy:true});confetti();sfx.win()}
   }else if(game.isStalemate())say('Hết nước đi mà Vua không bị chiếu, nên ván này hòa. Lần sau khi đang thắng, nhớ chừa đường cho Vua bên kia nhé!');
@@ -4040,11 +4081,11 @@ function puzzleMove(mv){
   progress.solved[p.id]=Math.max(progress.solved[p.id]||0,stars);
   if(P.daily){const k=todayKey();progress.daily[k]=progress.daily[k]||[];if(!progress.daily[k].includes(p.id))progress.daily[k].push(p.id)}
   save();sfx.win();
-  let msg=(stars===3?'Xuất sắc, Nhật Minh! Đúng ngay lần đầu! ⭐⭐⭐':stars===2?'Giỏi lắm! ⭐⭐':'Làm được rồi! ⭐')+' ';
+  let msg=(stars===3?`Xuất sắc, ${shortName()}! Đúng ngay lần đầu! ⭐⭐⭐`:stars===2?'Giỏi lắm! ⭐⭐':'Làm được rồi! ⭐')+' ';
   if(p.theme==='mate1'||p.theme==='mate2')msg+='Chiếu hết! Vua đối phương không còn đường chạy.';
   else if(p.theme==='fork')msg+=`Quân ${NAMES[res.piece]} tấn công 2 quân cùng lúc, đối phương chỉ cứu được một!`;
   else msg+=`Ăn được quân ${NAMES[res.captured||'p']} mà không bị mất gì.`;
-  if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=' Minh đã xong 5 câu đố hôm nay!';confetti()}
+  if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=` ${shortName()} đã xong 5 câu đố hôm nay!`;confetti()}
   say(msg,{happy:true});
   // diễn tiếp phần còn lại cho câu thắng quân
   if(p.cont&&p.cont.length===2&&p.theme!=='mate1'&&p.theme!=='mate2'){
@@ -4112,7 +4153,7 @@ function lessonClick(sq){
   if(L.stars.size===0){
     const ls=LESSONS[L.idx];
     if(L.round+1<ls.rounds.length){say('Giỏi quá! Sang màn tiếp theo nào!',{happy:true});sfx.win();setTimeout(()=>startLesson(L.idx,L.round+1),1800)}
-    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();say(`Tuyệt vời! Minh đã học xong quân ${NAMES[ls.t]}!`,{happy:true})}
+    else{progress.lessons[ls.t]=true;save();confetti();sfx.win();say(`Tuyệt vời! ${shortName()} đã học xong quân ${NAMES[ls.t]}!`,{happy:true})}
   }else if(!(L.type==='q'&&LESSONS[L.idx].t==='p'))say(`Còn ${L.stars.size} ngôi sao nữa thôi!`,{voice:false});
 }
 $('retryBtn').onclick=()=>L&&startLesson(L.idx,0);
@@ -4120,7 +4161,61 @@ $('backLessons').onclick=openLessons;
 
 // cho kiểm thử tự động
 window.__app={get game(){return game},get P(){return P},get RV(){return RV},Engine,startGame,startPuzzle,PUZ,reviewGame,showReview};
-goHome();
+// ====== Người chơi ======
+const AVATARS=['🦁','🐯','🐼','🐰','🦊','🐸','🐵','🐧','🐶','🐱','🦄','🐻'];
+function updateHeader(){const p=curPlayer();
+  $('title').textContent=p?`♞ Cờ Vua của ${shortName()}`:'♞ Cờ Vua';$('playerBtn').textContent=p?p.avatar:'👤'}
+function statsOf(id){const pr=Object.assign(blankProgress(),lsGet('covua-progress-'+id)||{});
+  return `🧩 ${Object.keys(pr.solved).length} câu · 🏆 ${pr.wins} ván`}
+let pendingDel=null;
+function openPlayers(){
+  show('players');updateHeader();
+  const cards=players.list.map(p=>`<button class="pcard${p.id===players.current?' last':''}" data-id="${p.id}">
+      <span class="del" data-del="${p.id}" role="button" aria-label="Xóa">✕</span>
+      <div class="av">${p.avatar}</div><div class="nm"></div><div class="st">${pendingDel===p.id?'Bấm ✕ lần nữa để xóa':statsOf(p.id)}</div></button>`).join('');
+  $('players').innerHTML=cards+`<button class="pcard add" id="addPlayer"><div class="av">➕</div><div class="nm">Thêm người chơi</div></button>`;
+  // tên do người dùng nhập: gán bằng textContent
+  $('players').querySelectorAll('.pcard[data-id]').forEach(c=>{const p=players.list.find(x=>x.id===c.dataset.id);c.querySelector('.nm').textContent=p.name});
+  $('players').querySelectorAll('.pcard[data-id]').forEach(c=>c.onclick=e=>{
+    const del=e.target.closest('[data-del]');
+    if(del){e.stopPropagation();
+      if(pendingDel===del.dataset.del){removePlayer(del.dataset.del);pendingDel=null}else pendingDel=del.dataset.del;
+      openPlayers();
+      if(pendingDel){const p=players.list.find(x=>x.id===pendingDel);say(`Xóa ${p.name} sẽ mất hết sao và tiến độ. Bấm ✕ lần nữa nếu chắc chắn.`,{voice:false})}
+      return}
+    pendingDel=null;choosePlayer(c.dataset.id)});
+  $('addPlayer').onclick=()=>openPlayerForm();
+  if(!pendingDel)say(players.list.length?'Ai chơi cờ hôm nay? Bấm vào tên của mình nhé!':'Chào bạn! Mình là Khủng Long Xanh. Bấm Thêm người chơi để tạo tên của bạn nhé!');
+}
+function choosePlayer(id){
+  players.current=id;lsSet('covua-players',players);loadProgress(id);updateHeader();sfx.star();goHome();
+}
+function removePlayer(id){
+  players.list=players.list.filter(p=>p.id!==id);
+  try{localStorage.removeItem('covua-progress-'+id)}catch(e){}
+  if(players.current===id)players.current=null;
+  lsSet('covua-players',players);
+}
+let pickedAv=AVATARS[0];
+function openPlayerForm(){
+  show('playerForm');
+  const used=players.list.map(p=>p.avatar);pickedAv=AVATARS.find(a=>!used.includes(a))||AVATARS[0];
+  const draw=()=>{$('avs').innerHTML=AVATARS.map(a=>`<button class="${a===pickedAv?'on':''}" data-a="${a}">${a}</button>`).join('');
+    $('avs').querySelectorAll('button').forEach(b=>b.onclick=()=>{pickedAv=b.dataset.a;draw()})};
+  draw();$('pname').value='';setTimeout(()=>$('pname').focus(),50);
+  say('Bạn tên là gì? Gõ tên rồi chọn một con vật làm hình đại diện nhé.');
+}
+$('pSave').onclick=()=>{
+  const name=$('pname').value.trim().replace(/\s+/g,' ');
+  if(!name){say('Bạn nhớ gõ tên vào ô trên nhé.');$('pname').focus();return}
+  if(players.list.some(p=>p.name.toLowerCase()===name.toLowerCase())){say('Tên này có rồi. Bạn chọn tên khác, hoặc quay lại bấm vào tên đó nhé.');return}
+  const id='p'+Date.now();players.list.push({id,name,avatar:pickedAv});lsSet('covua-players',players);
+  choosePlayer(id);
+};
+$('pname').addEventListener('keydown',e=>{if(e.key==='Enter')$('pSave').click()});
+$('pCancel').onclick=()=>openPlayers();
+$('playerBtn').onclick=()=>{pendingDel=null;openPlayers()};
+openPlayers();
 }
 </script>
 </body>
