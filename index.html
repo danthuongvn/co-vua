@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Cờ Vua Cùng Khủng Long</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffd36b">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cờ Vua">
 <style>
   :root{
     --bg:#fff8e7; --ink:#3b2f2f; --light:#f3dcb4; --dark:#b5835a;
@@ -130,6 +137,13 @@
   .onbar{background:#fff;border-radius:14px;padding:8px 12px;font-weight:700;text-align:center;box-shadow:0 3px 0 #e6d3b0}
   .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:20;background:#3b2f2f;color:#fff;border-radius:16px;padding:12px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px #0004;max-width:94vw}
   .toast button{border:none;border-radius:10px;padding:8px 12px;font:inherit;font-weight:800;cursor:pointer}
+  #lockView{position:fixed;inset:0;z-index:15;background:#fff8e7f5;display:flex;align-items:center;justify-content:center;padding:20px}
+  .minirow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .mini{border:none;background:#fff;border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #e6d3b0}
+  .ecards{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+  .ecard{background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:0 3px 0 #e6d3b0}
+  .ecard .ev{font-size:1.8rem;font-weight:800}
+  details summary{cursor:pointer;font-weight:700;padding:4px 0}
   .sectitle{font-weight:800;font-size:1.1rem;margin:6px 2px 0}
 </style>
 </head>
@@ -178,7 +192,32 @@
     <button class="btn" data-go="learn"><span>📚</span> Học từng quân cờ</button>
     <button class="btn" data-go="two"><span>👫</span> Hai người chơi</button>
     <button class="btn green" data-go="online" style="background:#14a3a3;box-shadow:0 4px 0 #0c7a7a"><span>🌐</span> Chơi online với bạn bè</button>
+    <div class="minirow">
+      <button class="mini" id="progressBtn">📈 Tiến bộ</button>
+      <button class="mini" id="parentBtn">👨‍👩‍👦 Phụ huynh</button>
+      <button class="mini hidden" id="installBtn">📲 Cài vào máy</button>
+    </div>
     <div class="stats" id="stats"></div>
+  </section>
+
+  <section id="progressView" class="hidden" style="display:grid;gap:12px"></section>
+  <section id="parentView" class="hidden" style="display:grid;gap:12px"></section>
+  <section id="gateView" class="hidden">
+    <div class="form">
+      <b id="gateTitle"></b>
+      <div>Người lớn hãy giải phép tính để tiếp tục:</div>
+      <div style="text-align:center;font-size:1.8rem;font-weight:800" id="gateQ"></div>
+      <input id="gateIn" type="text" inputmode="numeric" placeholder="Kết quả" autocomplete="off">
+      <div class="controls"><button class="btn green" id="gateOk">Tiếp tục</button><button class="btn orange" id="gateCancel">Quay lại</button></div>
+    </div>
+  </section>
+  <section id="lockView" class="hidden">
+    <div class="form" style="text-align:center;max-width:480px">
+      <div style="font-size:3rem">🦖</div>
+      <div style="font-size:4rem">🌙</div>
+      <div id="lockText" style="font-size:1.1rem"></div>
+      <div class="controls"><button class="btn" id="lockSwitch">👤 Đổi người chơi</button><button class="btn orange" id="lockMore">🔓 Người lớn mở thêm 15 phút</button></div>
+    </div>
   </section>
 
   <!-- Danh sách bài học -->
@@ -3700,7 +3739,7 @@ const FILES='abcdefgh';
 const $=id=>document.getElementById(id);
 
 // ====== Lưu tiến độ ======
-const blankProgress=()=>({lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true});
+const blankProgress=()=>({lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true,elo:{g:600,p:600},eloHist:[],limit:0,usage:{},extra:{}});
 let progress=blankProgress();
 let players={list:[],current:null};
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
@@ -3790,6 +3829,7 @@ const cpOf=s=>!s?0:s.mate!==undefined?(s.mate>0?1000-s.mate:-1000-s.mate):Math.m
 let view='home';
 function show(v){
   view=v;
+  ['progressView','parentView','gateView'].forEach(id=>$(id).classList.toggle('hidden',v!==id));
   $('home').classList.toggle('hidden',v!=='home');
   $('playerPick').classList.toggle('hidden',v!=='players');
   $('playerForm').classList.toggle('hidden',v!=='playerForm');
@@ -3821,12 +3861,16 @@ function solvedCount(){return Object.keys(progress.solved).length}
 function goHome(){
   if(!curPlayer()){openPlayers();return}
   show('home');
+  if(isLocked()){showLock();return}
   const today=todayKey(), d=progress.daily[today]||[];
   $('stats').innerHTML=`🧩 Câu đố đã giải: <b>${solvedCount()}</b>/${PUZ.length} &nbsp; 🗓️ Hôm nay: <b>${d.length}</b>/5<br>`+
-    `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}`;
+    `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}<br>`+
+    `📈 Elo: ván đấu <b>${eloOf().g}</b> · câu đố <b>${eloOf().p}</b>`;
   say(d.length>=5?`${fullName()} đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?`:`Chào ${fullName()}! Mình là Khủng Long Xanh. Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!`);
 }
 $('homeBtn').onclick=goHome;
+$('progressBtn').onclick=()=>openProgress();
+$('parentBtn').onclick=()=>openParent();
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
   const g=b.dataset.go;
   if(g==='online'){openOnline();return}
@@ -3894,7 +3938,7 @@ function flipped(g){
 }
 
 // ====== Chơi cờ ======
-let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0,myColor='w',localOver=false,gameToken=0;
+let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0,myColor='w',localOver=false,gameToken=0,ratedToken=-1;
 // ====== Đồng hồ ======
 const TC=[{m:0,inc:0,label:'Không'},{m:5,inc:3,label:'5 phút'},{m:10,inc:5,label:'10 phút'},{m:15,inc:10,label:'15 phút'}];
 const fmtT=ms=>{ms=Math.max(0,ms);const sec=ms<10000?Math.ceil(ms/100)/10:Math.ceil(ms/1000);if(ms<10000)return '0:'+sec.toFixed(1).padStart(4,'0');return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
@@ -3914,6 +3958,7 @@ function updateClocks(){
 }
 function localTimeout(color){
   lcStop();localOver=true;busy=false;LC[color]=0;progress.games++;
+  if(mode==='bot'&&ratedToken!==gameToken){ratedToken=gameToken;rateGame(color===myColor?0:1)}
   if(mode==='bot'){
     if(color===myColor)say('Hết giờ rồi! Máy thắng ván này. Lần sau con nhớ để ý đồng hồ nhé.');
     else{progress.wins++;say(`Máy hết giờ! ${fullName()} thắng rồi!`,{happy:true});confetti();sfx.win()}
@@ -4058,12 +4103,13 @@ async function botTurn(tok){
 function endCheck(){
   if(!game.isGameOver())return false;
   lcStop();progress.games++;
+  let dG=0;if(mode==='bot'&&ratedToken!==gameToken){ratedToken=gameToken;dG=rateGame(game.isCheckmate()?(game.turn()!==myColor?1:0):0.5)}
   if(game.isCheckmate()){
     const loser=game.turn();
     if(mode==='bot'&&loser!==myColor){
       progress.wins++;progress.levelWins[startedLevel]=(progress.levelWins[startedLevel]||0)+1;
       const next=startedLevel<LEVELS.length-1&&progress.levelWins[startedLevel]>=2?` Con đã thắng mức này ${progress.levelWins[startedLevel]} lần, thử mức ${LEVELS[startedLevel+1].name.split(' ')[1]} xem!`:'';
-      say(`Chiếu hết! ${fullName()} thắng rồi!`+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
+      say(`Chiếu hết! ${fullName()} thắng rồi!`+(dG?` Elo ${signed(dG)}.`:'')+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
     }else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con! Bấm Xem lại ván để tìm xem mình sai ở đâu nhé.');
     else{say(`Chiếu hết! ${loser==='w'?'Bên Đen':'Bên Trắng'} thắng rồi!`,{happy:true});confetti();sfx.win()}
   }else if(game.isStalemate())say('Hết nước đi mà Vua không bị chiếu, nên ván này hòa. Lần sau khi đang thắng, nhớ chừa đường cho Vua bên kia nhé!');
@@ -4237,6 +4283,7 @@ function puzzleMove(mv){
   if(p.theme==='mate1'||(p.theme==='mate2'&&P.step===2))ok=g.isCheckmate();
   else ok=u===sol[P.step].slice(0,4);
   if(!ok){
+    if(!P.rated){P.rated=true;ratePuzzle(p.theme,0,p.id)}
     P.failed=true;sfx.bad();renderPuzzle({[mv.to]:'bad'});
     say(['Chưa đúng rồi. ','Gần rồi, nhưng chưa phải. ','Thử lại nào! '][Math.floor(Math.random()*3)]+'Con nhìn xem có chiếu được không, có ăn được gì không?');
     P.busy=true;setTimeout(()=>{g.undo();P.last=null;P.busy=false;renderPuzzle()},1100);return;
@@ -4251,6 +4298,7 @@ function puzzleMove(mv){
   // giải xong
   P.done=true;renderPuzzle({[mv.to]:'good'});
   const stars=P.failed?1:P.hints?2:3;
+  let dElo=0;if(!P.rated){P.rated=true;dElo=ratePuzzle(p.theme,P.hints?0.5:1,p.id)}
   progress.solved[p.id]=Math.max(progress.solved[p.id]||0,stars);
   if(P.daily){const k=todayKey();progress.daily[k]=progress.daily[k]||[];if(!progress.daily[k].includes(p.id))progress.daily[k].push(p.id)}
   save();sfx.win();
@@ -4258,6 +4306,7 @@ function puzzleMove(mv){
   if(p.theme==='mate1'||p.theme==='mate2')msg+='Chiếu hết! Vua đối phương không còn đường chạy.';
   else if(p.theme==='fork')msg+=`Quân ${NAMES[res.piece]} tấn công 2 quân cùng lúc, đối phương chỉ cứu được một!`;
   else msg+=`Ăn được quân ${NAMES[res.captured||'p']} mà không bị mất gì.`;
+  if(dElo)msg+=` (Elo câu đố ${signed(dElo)})`;
   if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=` ${shortName()} đã xong 5 câu đố hôm nay!`;confetti()}
   say(msg,{happy:true});
   // diễn tiếp phần còn lại cho câu thắng quân
@@ -4341,6 +4390,7 @@ function updateHeader(){const p=curPlayer();
 function statsOf(id){const pr=Object.assign(blankProgress(),lsGet('covua-progress-'+id)||{});
   return `🧩 ${Object.keys(pr.solved).length} câu · 🏆 ${pr.wins} ván`}
 function openPlayers(){
+  $('lockView').classList.add('hidden');
   show('players');updateHeader();
   const cards=players.list.map(p=>`<button class="pcard${p.id===players.current?' last':''}" data-id="${p.id}">
       <span class="del" data-del="${p.id}" role="button" aria-label="Xóa">✕</span>
@@ -4404,6 +4454,187 @@ $('delOk').onclick=()=>{
 };
 $('delAns').addEventListener('keydown',e=>{if(e.key==='Enter')$('delOk').click()});
 $('delCancel').onclick=()=>{delId=null;openPlayers()};
+// ====== EXTRAS: Elo + biểu đồ, trang phụ huynh, giới hạn thời gian, cài như ứng dụng ======
+// Được chèn vào bên trong khối script chính của app.html khi build.
+
+// ---- Elo (điểm ước tính trong web, không phải Elo FIDE) ----
+const BOT_ELO=[400,600,900,1200,1500];
+const PUZ_ELO={mate1:500,capture:700,fork:900,mate2:1100};
+const ELO_START=600;
+function eloOf(){progress.elo=Object.assign({g:ELO_START,p:ELO_START},progress.elo||{});return progress.elo}
+const eloNew=(r,opp,score,K)=>Math.round(r+K*(score-1/(1+Math.pow(10,(opp-r)/400))));
+function recordElo(){
+  const e=eloOf(),d=todayKey();progress.eloHist=progress.eloHist||[];
+  const last=progress.eloHist[progress.eloHist.length-1],row={d,g:e.g,p:e.p};if(e.o!==undefined)row.o=e.o;
+  if(last&&last.d===d)Object.assign(last,row);else progress.eloHist.push(row);
+  if(progress.eloHist.length>400)progress.eloHist.shift();
+}
+function rateGame(score){ // ván với máy
+  const e=eloOf(),before=e.g;const K=(progress.games||0)<20?40:24;
+  e.g=Math.max(100,eloNew(e.g,BOT_ELO[startedLevel]||600,score,K));recordElo();save();
+  return e.g-before;
+}
+function ratePuzzle(theme,score,id){
+  progress.ratedPuz=progress.ratedPuz||{};if(id!==undefined){if(progress.ratedPuz[id])return 0;progress.ratedPuz[id]=1}
+  const e=eloOf(),before=e.p;e.p=Math.max(100,eloNew(e.p,PUZ_ELO[theme]||700,score,16));recordElo();save();
+  return e.p-before;
+}
+const signed=n=>(n>0?'+':'')+n;
+function eloDelta(key,days){ // thay đổi so với `days` ngày trước
+  const h=progress.eloHist||[];if(!h.length)return 0;
+  const cut=new Date();cut.setDate(cut.getDate()-days);
+  const keyDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+  let base=null;for(const r of h){if(keyDate(r.d)<=cut&&r[key]!==undefined)base=r[key]}
+  if(base===null){const first=h.find(r=>r[key]!==undefined);base=first?first[key]:null}
+  const cur=key==='o'?eloOf().o:eloOf()[key];
+  return base===null||cur===undefined?0:cur-base;
+}
+// Biểu đồ đường SVG
+function eloChart(hist){
+  const rows=(hist||[]).slice(-30);
+  if(rows.length<2)return '<div class="note" style="text-align:center;padding:16px">Chơi thêm vài ngày nữa là có biểu đồ tiến bộ nhé!</div>';
+  const S=[['g','Ván đấu','#3fae5a'],['p','Câu đố','#9b59ff'],['o','Online','#14a3a3']].filter(([k])=>rows.some(r=>r[k]!==undefined));
+  const vals=rows.flatMap(r=>S.map(([k])=>r[k]).filter(v=>v!==undefined));
+  let lo=Math.min(...vals),hi=Math.max(...vals);if(hi-lo<100){const m=(hi+lo)/2;lo=m-50;hi=m+50}
+  lo=Math.floor(lo/50)*50;hi=Math.ceil(hi/50)*50;
+  const W=320,H=170,L=34,R=8,T=10,B=24;
+  const x=i=>L+(W-L-R)*i/(rows.length-1),y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
+  let g='';
+  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#0001"/><text x="${L-4}" y="${y(v)+4}" font-size="10" text-anchor="end" fill="#8a7a66">${Math.round(v)}</text>`}
+  const short=d=>{const [,m,dd]=d.split('-');return dd+'/'+m};
+  g+=`<text x="${L}" y="${H-6}" font-size="10" fill="#8a7a66">${short(rows[0].d)}</text><text x="${W-R}" y="${H-6}" font-size="10" text-anchor="end" fill="#8a7a66">${short(rows[rows.length-1].d)}</text>`;
+  for(const [k,,c] of S){
+    const pts=rows.map((r,i)=>r[k]===undefined?null:[x(i),y(r[k])]).filter(Boolean);
+    g+=`<polyline fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p=>p.join(',')).join(' ')}"/>`;
+    const lp=pts[pts.length-1];g+=`<circle cx="${lp[0]}" cy="${lp[1]}" r="4" fill="${c}"/>`;
+  }
+  const legend=S.map(([,n,c])=>`<span style="display:inline-flex;align-items:center;gap:4px;margin:0 6px"><i style="width:14px;height:4px;border-radius:2px;background:${c};display:inline-block"></i>${n}</span>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg><div class="note" style="text-align:center">${legend}</div>`;
+}
+function eloCards(){
+  const e=eloOf();
+  const card=(k,label,icon,v)=>{const d=eloDelta(k,7);return `<div class="ecard"><div class="note">${icon} ${label}</div><div class="ev">${v}</div><div class="note" style="color:${d>0?'#2b8442':d<0?'#b83640':'inherit'}">${d?signed(d)+' trong 7 ngày':'—'}</div></div>`};
+  return `<div class="ecards">${card('g','Ván đấu','🤖',e.g)}${card('p','Câu đố','🧩',e.p)}${e.o!==undefined?card('o','Online','🌐',e.o):''}</div>`;
+}
+function minutesToday(pr){const s=((pr||progress).usage||{})[todayKey()]||0;return Math.floor(s/60)}
+
+// ---- Trang Tiến bộ ----
+function openProgress(){
+  show('progressView');
+  const pr=progress;
+  $('progressView').innerHTML=`<div class="sectitle">📈 Tiến bộ của ${esc(fullName())}</div>${eloCards()}
+    <div class="form" style="padding:12px">${eloChart(pr.eloHist)}</div>
+    <div class="form" style="gap:6px">
+      <div>🧩 Câu đố đã giải: <b>${solvedCount()}</b>/${PUZ.length}</div>
+      <div>🤖 Ván với máy: <b>${pr.games||0}</b> ván, thắng <b>${pr.wins||0}</b></div>
+      <div>📚 Bài học xong: <b>${Object.keys(pr.lessons).length}</b>/${LESSONS.length}</div>
+      <div>⏱️ Hôm nay đã chơi: <b>${minutesToday()}</b> phút</div>
+    </div>
+    <div class="note">Điểm Elo ở đây là điểm ước tính trong web, giúp xem mình tiến bộ, không phải Elo chính thức của Liên đoàn cờ.</div>`;
+  const e=eloOf(),d=eloDelta('p',7)+eloDelta('g',7);
+  say(d>0?`Tuần này ${shortName()} tiến bộ ${d} điểm. Giỏi quá!`:'Mỗi ngày giải vài câu đố và chơi vài ván, điểm sẽ tăng dần đó!',{voice:false});
+}
+
+// ---- Cổng người lớn (phép tính) ----
+let gateNext=null,gateAns=null;
+function askGate(title,next){
+  gateNext=next;$('lockView').classList.add('hidden');show('gateView');
+  const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));const a=r(12,19),b=r(3,9),c=r(11,29);gateAns=a*b-c;
+  $('gateTitle').textContent=title;$('gateQ').textContent=`${a} × ${b} − ${c} = ?`;$('gateIn').value='';
+  setTimeout(()=>$('gateIn').focus(),50);say('Phần này dành cho người lớn. Hãy giải phép tính nhé.',{voice:false});
+}
+$('gateOk').onclick=()=>{
+  const v=$('gateIn').value.trim();
+  if(v!==''&&+v===gateAns){const n=gateNext;gateNext=null;n&&n()}
+  else{sfx.bad();askGate($('gateTitle').textContent,gateNext);say('Chưa đúng, thử phép tính mới nhé.',{voice:false})}
+};
+$('gateIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('gateOk').click()});
+$('gateCancel').onclick=()=>{gateNext=null;isLocked()?showLock():goHome()};
+
+// ---- Giới hạn thời gian ----
+const LIMITS=[0,15,30,45,60,90,120];
+function isLocked(){
+  if(!curPlayer()||!progress.limit)return false;
+  const extra=((progress.extra||{})[todayKey()]||0);
+  return minutesToday()>=progress.limit+extra;
+}
+function showLock(){
+  if(!$('lockView').classList.contains('hidden'))return;
+  $('lockView').classList.remove('hidden');
+  $('lockText').textContent=`${fullName()} đã chơi ${minutesToday()} phút hôm nay, đủ giờ bố mẹ đặt rồi. Nghỉ ngơi, đọc sách, chạy nhảy một chút, mai mình chơi tiếp nhé!`;
+  say('Hôm nay chơi đủ rồi! Nghỉ mắt một chút, mai mình gặp lại nhé!');
+}
+$('lockSwitch').onclick=()=>openPlayers();
+$('lockMore').onclick=()=>askGate('Cho chơi thêm 15 phút hôm nay?',()=>{
+  progress.extra=progress.extra||{};const k=todayKey();progress.extra[k]=(progress.extra[k]||0)+15;save();goHome();say('Được chơi thêm 15 phút nữa nhé!')});
+let lastBreakTip=0;
+setInterval(()=>{
+  if(!curPlayer()||document.visibilityState!=='visible')return;
+  if(['players','playerForm','delForm','gateView','parentView'].includes(view)||!$('lockView').classList.contains('hidden'))return;
+  progress.usage=progress.usage||{};const k=todayKey();progress.usage[k]=(progress.usage[k]||0)+10;
+  // chỉ giữ 60 ngày gần nhất
+  const keys=Object.keys(progress.usage);if(keys.length>60)delete progress.usage[keys[0]];
+  save();
+  const m=minutesToday();
+  if(m>0&&m%25===0&&m!==lastBreakTip){lastBreakTip=m;toastLocal(`👀 ${shortName()} đã chơi ${m} phút. Nhìn ra xa một chút cho mắt nghỉ nhé!`)}
+  if(isLocked()&&!(view==='online'&&OG.data&&OG.data.status==='active'))showLock();
+},10000);
+function toastLocal(text){
+  const t=$('toast');t.innerHTML='';const sp=document.createElement('span');sp.textContent=text;t.appendChild(sp);
+  const x=document.createElement('button');x.textContent='OK';x.style.background='#7be495';x.onclick=()=>t.classList.add('hidden');t.appendChild(x);
+  t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),10000);
+}
+
+// ---- Trang phụ huynh ----
+function openParent(){askGate('Vào trang phụ huynh',renderParent)}
+function renderParent(){
+  show('parentView');
+  const cards=players.list.map(pl=>{
+    const pr=Object.assign(blankProgress(),lsGet('covua-progress-'+pl.id)||{});
+    const e=Object.assign({g:ELO_START,p:ELO_START},pr.elo||{});
+    const used=Math.floor(((pr.usage||{})[todayKey()]||0)/60),lim=pr.limit||0;
+    const week=(()=>{let s=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);s+=(pr.usage||{})[d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()]||0}return Math.round(s/60)})();
+    return `<div class="form" data-pl="${pl.id}">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:2.2rem">${pl.avatar}</span><b class="pn" style="font-size:1.15rem;flex:1"></b></div>
+      <div class="note">Elo ván đấu <b>${e.g}</b> · câu đố <b>${e.p}</b>${e.o!==undefined?' · online <b>'+e.o+'</b>':''} · đã giải ${Object.keys(pr.solved).length} câu · thắng máy ${pr.wins||0}/${pr.games||0} ván</div>
+      <div>⏱️ Hôm nay: <b>${used}</b> phút${lim?` / giới hạn ${lim} phút`:''} · 7 ngày: <b>${week}</b> phút</div>
+      <div class="levelrow" style="justify-content:flex-start">Giới hạn/ngày: ${LIMITS.map(l=>`<button data-lim="${l}" class="${lim===l?'on':''}">${l?l+"'":'Không'}</button>`).join('')}</div>
+      <details><summary>📈 Biểu đồ tiến bộ</summary>${eloChart(pr.eloHist)}</details>
+    </div>`}).join('');
+  $('parentView').innerHTML=`<div class="sectitle">👨‍👩‍👦 Trang phụ huynh</div>${cards||'<div class="note">Chưa có người chơi nào.</div>'}
+    <div id="parentOnline"></div>
+    <div class="controls"><button class="btn green" id="parentDone">✅ Xong</button></div>`;
+  $('parentView').querySelectorAll('[data-pl]').forEach(card=>{
+    const id=card.dataset.pl,pl=players.list.find(p=>p.id===id);card.querySelector('.pn').textContent=pl.name;
+    card.querySelectorAll('[data-lim]').forEach(b=>b.onclick=()=>{
+      const pr=Object.assign(blankProgress(),lsGet('covua-progress-'+id)||{});pr.limit=+b.dataset.lim;lsSet('covua-progress-'+id,pr);
+      if(id===players.current)progress.limit=pr.limit;renderParent();
+      say(pr.limit?`Đã đặt giới hạn ${pr.limit} phút mỗi ngày cho ${pl.name}.`:`Đã bỏ giới hạn thời gian cho ${pl.name}.`,{voice:false})});
+  });
+  $('parentDone').onclick=()=>curPlayer()?goHome():openPlayers();
+  if(typeof renderParentOnline==='function')renderParentOnline($('parentOnline'));
+  say('Ở đây bố mẹ đặt giới hạn thời gian chơi, xem tiến bộ và quản lý phần online.',{voice:false});
+}
+
+// ---- Cài như ứng dụng ----
+let installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;updateInstallBtn()});
+window.addEventListener('appinstalled',()=>{installEvt=null;updateInstallBtn();say('Đã cài xong! Từ giờ mở Cờ Vua từ màn hình chính nhé.',{happy:true})});
+const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function updateInstallBtn(){$('installBtn').classList.toggle('hidden',isStandalone())}
+$('installBtn').onclick=async()=>{
+  if(installEvt){installEvt.prompt();try{await installEvt.userChoice}catch(e){}installEvt=null;return}
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  say(ios?'Trên iPhone/iPad: mở trang này bằng Safari, bấm nút Chia sẻ (ô vuông có mũi tên lên), rồi chọn "Thêm vào MH chính".'
+         :'Mở menu ⋮ của trình duyệt, chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
+};
+updateInstallBtn();
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+window.addEventListener('offline',()=>toastLocal('📴 Mất mạng. Vẫn chơi được với máy, câu đố và bài học nhé!'));
+window.addEventListener('online',()=>toastLocal('📶 Có mạng trở lại.'));
+
 // ====== ONLINE: tài khoản, bạn bè, chat, chơi online (Firebase) ======
 // Được chèn vào bên trong khối script chính của app.html khi build.
 const FB={
@@ -4443,6 +4674,7 @@ function cleanText(t){
   for(const re of BAD_RE)t=t.replace(re,(m,a,w)=>a+'*'.repeat(Math.min(w.length,4)));
   return t;
 }
+const chatOff=()=>!!(MYP&&MYP.settings&&MYP.settings.chatOff);
 const QUICK=['👍','😄','😮','🎉','❤️','🤝','Chơi ván nữa nhé!','Hay quá!','Bạn giỏi quá!','Mình đang nghĩ...','Chúc bạn chơi vui!','Cảm ơn bạn!'];
 
 // ---- Mở mục online ----
@@ -4564,7 +4796,7 @@ function openHub(){show('onHub');renderMe();renderFriends();renderHubClock();
 function renderMe(){
   if(!MYP)return;
   $('meAv').textContent=MYP.avatar;$('meName').textContent=MYP.name;$('meCode').textContent=MYP.code;
-  const s=MYP.stats||{};$('meStats').textContent=`🏆 Thắng ${s.wins||0} · Thua ${s.losses||0} · Hòa ${s.draws||0}`;
+  const s=MYP.stats||{};$('meStats').textContent=`📈 Elo ${s.elo||ELO_START} · 🏆 Thắng ${s.wins||0} · Thua ${s.losses||0} · Hòa ${s.draws||0}`;
 }
 function watchFriends(){
   Object.keys(FRIENDS).forEach(fid=>{
@@ -4573,7 +4805,7 @@ function watchFriends(){
     const [a,b]=[ME.uid,fid].sort();
     listen(ref(`chats/${a}/${b}`).limitToLast(1),'child_added',s=>{const m=s.val();
       if(m&&m.from===fid&&(m.ts||0)>(lsRead()[fid]||0)&&!(view==='onChat'&&CH&&CH.fid===fid)&&!(view==='online'&&OG.opp===fid&&!$('miniChat').classList.contains('hidden'))){UNREAD[fid]=true;renderFriends();
-        if(m.ts>Date.now()-60000)toast(`💬 ${FRIENDS[fid]?FRIENDS[fid].name:'Bạn'} nhắn tin`,'Xem',()=>openChat(fid))}});
+        if(m.ts>Date.now()-60000&&!chatOff())toast(`💬 ${FRIENDS[fid]?FRIENDS[fid].name:'Bạn'} nhắn tin`,'Xem',()=>openChat(fid))}});
   });
 }
 function renderFriends(){
@@ -4581,7 +4813,7 @@ function renderFriends(){
   $('friendList').innerHTML=ids.length?ids.map(fid=>{const f=FRIENDS[fid];
     return `<div class="frow"><div class="av">${esc(f.avatar)}<span class="dot2 ${STATUS[fid]?'on':''}"></span></div>
       <div class="nm">${esc(f.name)}<div class="note">${STATUS[fid]?'Đang online':'Offline'} · ${esc(f.code)}</div></div>
-      <button class="btn small" data-chat="${fid}">💬${UNREAD[fid]?'<span class="badge">mới</span>':''}</button>
+      ${chatOff()?'':`<button class="btn small" data-chat="${fid}">💬${UNREAD[fid]?'<span class="badge">mới</span>':''}</button>`}
       <button class="btn green small" data-play="${fid}">⚔️</button></div>`}).join('')
     :'<div class="note" style="text-align:center;padding:10px">Chưa có bạn nào. Gửi ID của bạn cho bạn bè, hoặc nhập ID của bạn ấy ở ô trên.</div>';
   $('friendList').querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>openChat(b.dataset.chat));
@@ -4625,11 +4857,13 @@ function attachMessages(fid,box){
   r.on('child_added',fn);return ()=>r.off('child_added',fn);
 }
 async function sendMsg(fid,text){
+  if(chatOff())return;
   const t=cleanText(text);if(!t)return;
   try{await ref(chatPath(fid)).push({from:ME.uid,text:t,ts:TS()})}catch(e){say('Chưa gửi được tin nhắn.')}
 }
 function openChat(fid){
   const f=FRIENDS[fid];if(!f)return;
+  if(chatOff()){say('Bố mẹ đã tắt phần nhắn tin. Con vẫn mời bạn chơi cờ được nhé!');return}
   if(CH&&CH.off)CH.off();
   CH={fid,off:null};show('onChat');
   $('chatAv').textContent=f.avatar;$('chatName').textContent=f.name;
@@ -4659,7 +4893,7 @@ const OG={gid:null,data:null,chess:null,myColor:'w',opp:null,sel:null,off:null,w
 async function inviteFriend(fid){
   const f=FRIENDS[fid];if(!f||!MYP)return;
   const gid=ref('games').push().key,meWhite=Math.random()<.5;
-  const names={[ME.uid]:{name:MYP.name,avatar:MYP.avatar},[fid]:{name:f.name,avatar:f.avatar}};
+  const names={[ME.uid]:{name:MYP.name,avatar:MYP.avatar,elo:(MYP.stats&&MYP.stats.elo)||ELO_START},[fid]:{name:f.name,avatar:f.avatar}};
   try{
     const tc=TC[progress.onlineTc===undefined?2:progress.onlineTc]||TC[0];
     const g={white:meWhite?ME.uid:fid,black:meWhite?fid:ME.uid,status:'waiting',moves:'',createdAt:TS(),by:ME.uid,names};
@@ -4679,7 +4913,7 @@ function renderInvites(inv){
     <div class="nm">${esc(v.name)}<div class="note">mời bạn chơi một ván!</div></div>
     <button class="btn green small" data-go1="${fid}">Chơi</button><button class="btn red small" data-no1="${fid}">Không</button></div>`}).join('');
   const accept=async fid=>{const v=inv[fid];
-    try{await ref().update({[`invites/${ME.uid}/${fid}`]:null,[`games/${v.gameId}/status`]:'active',[`games/${v.gameId}/startedAt`]:TS()});
+    try{await ref().update({[`invites/${ME.uid}/${fid}`]:null,[`games/${v.gameId}/status`]:'active',[`games/${v.gameId}/startedAt`]:TS(),[`games/${v.gameId}/names/${ME.uid}/elo`]:(MYP.stats&&MYP.stats.elo)||ELO_START});
       watchGame(v.gameId,fid)}catch(e){say('Ván cờ này không còn nữa.');ref(`invites/${ME.uid}/${fid}`).remove()}};
   $('invBox').querySelectorAll('[data-go1]').forEach(b=>b.onclick=()=>accept(b.dataset.go1));
   $('invBox').querySelectorAll('[data-no1]').forEach(b=>b.onclick=async()=>{const fid=b.dataset.no1;try{await ref().update({[`invites/${ME.uid}/${fid}`]:null,[`games/${inv[fid].gameId}/status`]:'declined'})}catch(e){ref(`invites/${ME.uid}/${fid}`).remove()}});
@@ -4691,7 +4925,7 @@ function renderInvites(inv){
 // ---- Ván cờ online ----
 function leaveGame(){if(OG.off)OG.off();OG.off=null;if(OG.chatOff)OG.chatOff();OG.chatOff=null;OG.gid=null;OG.data=null;OG.waiting=false}
 function watchGame(gid,fid){
-  leaveGame();OG.timeoutSent=false;OG.gid=gid;OG.opp=fid;OG.counted=!!(lsGet('covua-counted')||{})[gid];OG.waiting=true;OG.lastLen=-1;
+  leaveGame();OG.timeoutSent=false;OG.eloMsg='';OG.gid=gid;OG.opp=fid;OG.counted=!!(lsGet('covua-counted')||{})[gid];OG.waiting=true;OG.lastLen=-1;
   const r=ref('games/'+gid);
   const fn=s=>{const d=s.val();if(!d)return;OG.data=d;
     if(d.status==='waiting')return;
@@ -4758,8 +4992,13 @@ function onlineOver(d){
   if(!OG.counted){OG.counted=true;const cnt=lsGet('covua-counted')||{};cnt[OG.gid]=1;lsSet('covua-counted',cnt);
     const key={win:'wins',loss:'losses',draw:'draws'}[myRes];
     ref(`users/${ME.uid}/stats/${key}`).transaction(v=>(v||0)+1).catch(()=>{});
+    const nn=d.names||{},mine=(nn[ME.uid]&&nn[ME.uid].elo)||(MYP.stats&&MYP.stats.elo)||ELO_START,theirs=(nn[OG.opp]&&nn[OG.opp].elo)||ELO_START;
+    const sc=myRes==='win'?1:myRes==='loss'?0:0.5,ne=Math.max(100,eloNew(mine,theirs,sc,32));
+    ref(`users/${ME.uid}/stats/elo`).set(ne).catch(()=>{});
+    if(curPlayer()){eloOf().o=ne;recordElo();save()}
+    OG.eloMsg=` Elo online ${signed(ne-mine)}.`;
     if(myRes==='win'){confetti();sfx.win()}}
-  say(why+' '+(myRes==='win'?`Bạn thắng ${oppName()} rồi!`:myRes==='loss'?`${oppName()} thắng ván này. Bấm Xem lại ván để học từ lỗi nhé!`:'Ván cờ hòa!'),{happy:myRes==='win'});
+  say(why+' '+(myRes==='win'?`Bạn thắng ${oppName()} rồi!`:myRes==='loss'?`${oppName()} thắng ván này. Bấm Xem lại ván để học từ lỗi nhé!`:'Ván cờ hòa!')+(OG.eloMsg||''),{happy:myRes==='win'});
 }
 function onlineRemaining(c){
   const d=OG.data;if(!d||!d.clock)return null;
@@ -4787,6 +5026,7 @@ $('ogBack').onclick=()=>{leaveGame();openHub()};
 $('ogRematch').onclick=()=>{const f=OG.opp;leaveGame();inviteFriend(f)};
 $('ogReview').onclick=()=>{if(!OG.chess)return;game=OG.chess;rvColor=OG.myColor;reviewFrom='online';flip=OG.myColor==='b';const keep=OG.chess;leaveGame();game=keep;reviewGame()};
 $('ogChat').onclick=()=>{
+  if(chatOff()){say('Bố mẹ đã tắt phần nhắn tin.');return}
   const mc=$('miniChat');const showIt=mc.classList.contains('hidden');mc.classList.toggle('hidden',!showIt);
   if(showIt){if(OG.chatOff)OG.chatOff();OG.chatOff=attachMessages(OG.opp,$('ogMsgs'));drawQuick($('ogQuick'),t=>sendMsg(OG.opp,t))}
 };
@@ -4803,6 +5043,33 @@ function toast(text,btn,fn){
 }
 // Đã đăng nhập từ trước: kết nối ngầm để nhận lời mời và tin nhắn
 if(lsGet('covua-online')===1)FB.load().then(bootOnline).catch(()=>{});
+
+// ---- Phần online trong trang phụ huynh ----
+async function renderParentOnline(box){
+  if(!FB.auth||!ME||!MYP){box.innerHTML='<div class="note">Phần online: chưa đăng nhập trên máy này. Khi bé đăng nhập 🌐, bố mẹ sẽ quản lý được chat, bạn bè và báo cáo ở đây.</div>';return}
+  const ids=Object.keys(FRIENDS);
+  box.innerHTML=`<div class="form">
+    <b>🌐 Tài khoản online: <span id="poName"></span> (ID ${esc(MYP.code)})</b>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="poChat" ${chatOff()?'':'checked'}> Cho phép nhắn tin với bạn bè</label>
+    <div><b>Bạn bè (${ids.length})</b></div>
+    <div class="flist">${ids.map(fid=>`<div class="frow"><div class="av">${esc(FRIENDS[fid].avatar)}</div><div class="nm">${esc(FRIENDS[fid].name)}<div class="note">${esc(FRIENDS[fid].code)}</div></div>
+      <button class="btn orange small" data-unf="${fid}">Hủy kết bạn</button><button class="btn red small" data-blk="${fid}">Chặn</button></div>`).join('')||'<div class="note">Chưa có bạn nào.</div>'}</div>
+    <div><b>🚩 Báo cáo bé đã gửi</b></div><div id="poReports" class="note">Đang tải...</div>
+  </div>`;
+  $('poName').textContent=MYP.name;
+  $('poChat').onchange=async e=>{try{await ref(`users/${ME.uid}/settings/chatOff`).set(!e.target.checked);say(e.target.checked?'Đã bật nhắn tin.':'Đã tắt nhắn tin. Bé vẫn chơi online với bạn bè được.',{voice:false})}
+    catch(err){e.target.checked=!e.target.checked;say('Chưa lưu được. Bố mẹ cập nhật quy tắc Firebase mới nhé.',{voice:false})}};
+  box.querySelectorAll('[data-unf]').forEach(b=>b.onclick=async()=>{const fid=b.dataset.unf;
+    await ref().update({[`friends/${ME.uid}/${fid}`]:null,[`friends/${fid}/${ME.uid}`]:null}).catch(()=>{});renderParentOnline(box)});
+  box.querySelectorAll('[data-blk]').forEach(b=>b.onclick=async()=>{const fid=b.dataset.blk;
+    await ref().update({[`blocks/${ME.uid}/${fid}`]:true,[`friends/${ME.uid}/${fid}`]:null,[`friends/${fid}/${ME.uid}`]:null}).catch(()=>{});renderParentOnline(box)});
+  try{
+    const snap=await ref('reports').orderByChild('by').equalTo(ME.uid).get();const list=[];snap.forEach(c=>{list.push(c.val())});
+    list.sort((a,b)=>b.ts-a.ts);
+    const nameOf=uid=>FRIENDS[uid]?FRIENDS[uid].name:'(đã hủy kết bạn)';
+    $('poReports').innerHTML=list.length?list.slice(0,20).map(r=>`<div class="frow" style="display:block"><b>${esc(nameOf(r.about))}</b> · ${new Date(r.ts).toLocaleString('vi-VN')}<div class="note">${esc(r.text||'')}</div></div>`).join(''):'Chưa có báo cáo nào.';
+  }catch(e){$('poReports').textContent='Chưa xem được báo cáo (cần cập nhật quy tắc Firebase mới).'}
+}
 
 openPlayers();
 }

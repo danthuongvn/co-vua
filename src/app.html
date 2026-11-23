@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Cờ Vua Cùng Khủng Long</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffd36b">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cờ Vua">
 <style>
   :root{
     --bg:#fff8e7; --ink:#3b2f2f; --light:#f3dcb4; --dark:#b5835a;
@@ -130,6 +137,13 @@
   .onbar{background:#fff;border-radius:14px;padding:8px 12px;font-weight:700;text-align:center;box-shadow:0 3px 0 #e6d3b0}
   .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:20;background:#3b2f2f;color:#fff;border-radius:16px;padding:12px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 6px 20px #0004;max-width:94vw}
   .toast button{border:none;border-radius:10px;padding:8px 12px;font:inherit;font-weight:800;cursor:pointer}
+  #lockView{position:fixed;inset:0;z-index:15;background:#fff8e7f5;display:flex;align-items:center;justify-content:center;padding:20px}
+  .minirow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .mini{border:none;background:#fff;border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 3px 0 #e6d3b0}
+  .ecards{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+  .ecard{background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:0 3px 0 #e6d3b0}
+  .ecard .ev{font-size:1.8rem;font-weight:800}
+  details summary{cursor:pointer;font-weight:700;padding:4px 0}
   .sectitle{font-weight:800;font-size:1.1rem;margin:6px 2px 0}
 </style>
 </head>
@@ -178,7 +192,32 @@
     <button class="btn" data-go="learn"><span>📚</span> Học từng quân cờ</button>
     <button class="btn" data-go="two"><span>👫</span> Hai người chơi</button>
     <button class="btn green" data-go="online" style="background:#14a3a3;box-shadow:0 4px 0 #0c7a7a"><span>🌐</span> Chơi online với bạn bè</button>
+    <div class="minirow">
+      <button class="mini" id="progressBtn">📈 Tiến bộ</button>
+      <button class="mini" id="parentBtn">👨‍👩‍👦 Phụ huynh</button>
+      <button class="mini hidden" id="installBtn">📲 Cài vào máy</button>
+    </div>
     <div class="stats" id="stats"></div>
+  </section>
+
+  <section id="progressView" class="hidden" style="display:grid;gap:12px"></section>
+  <section id="parentView" class="hidden" style="display:grid;gap:12px"></section>
+  <section id="gateView" class="hidden">
+    <div class="form">
+      <b id="gateTitle"></b>
+      <div>Người lớn hãy giải phép tính để tiếp tục:</div>
+      <div style="text-align:center;font-size:1.8rem;font-weight:800" id="gateQ"></div>
+      <input id="gateIn" type="text" inputmode="numeric" placeholder="Kết quả" autocomplete="off">
+      <div class="controls"><button class="btn green" id="gateOk">Tiếp tục</button><button class="btn orange" id="gateCancel">Quay lại</button></div>
+    </div>
+  </section>
+  <section id="lockView" class="hidden">
+    <div class="form" style="text-align:center;max-width:480px">
+      <div style="font-size:3rem">🦖</div>
+      <div style="font-size:4rem">🌙</div>
+      <div id="lockText" style="font-size:1.1rem"></div>
+      <div class="controls"><button class="btn" id="lockSwitch">👤 Đổi người chơi</button><button class="btn orange" id="lockMore">🔓 Người lớn mở thêm 15 phút</button></div>
+    </div>
   </section>
 
   <!-- Danh sách bài học -->
@@ -332,7 +371,7 @@ const FILES='abcdefgh';
 const $=id=>document.getElementById(id);
 
 // ====== Lưu tiến độ ======
-const blankProgress=()=>({lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true});
+const blankProgress=()=>({lessons:{},wins:0,games:0,levelWins:{},solved:{},daily:{},level:0,coach:true,elo:{g:600,p:600},eloHist:[],limit:0,usage:{},extra:{}});
 let progress=blankProgress();
 let players={list:[],current:null};
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
@@ -422,6 +461,7 @@ const cpOf=s=>!s?0:s.mate!==undefined?(s.mate>0?1000-s.mate:-1000-s.mate):Math.m
 let view='home';
 function show(v){
   view=v;
+  ['progressView','parentView','gateView'].forEach(id=>$(id).classList.toggle('hidden',v!==id));
   $('home').classList.toggle('hidden',v!=='home');
   $('playerPick').classList.toggle('hidden',v!=='players');
   $('playerForm').classList.toggle('hidden',v!=='playerForm');
@@ -453,12 +493,16 @@ function solvedCount(){return Object.keys(progress.solved).length}
 function goHome(){
   if(!curPlayer()){openPlayers();return}
   show('home');
+  if(isLocked()){showLock();return}
   const today=todayKey(), d=progress.daily[today]||[];
   $('stats').innerHTML=`🧩 Câu đố đã giải: <b>${solvedCount()}</b>/${PUZ.length} &nbsp; 🗓️ Hôm nay: <b>${d.length}</b>/5<br>`+
-    `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}`;
+    `🏆 Thắng máy: <b>${progress.wins}</b> ván &nbsp; 📚 Bài học: <b>${Object.keys(progress.lessons).length}</b>/${LESSONS.length}<br>`+
+    `📈 Elo: ván đấu <b>${eloOf().g}</b> · câu đố <b>${eloOf().p}</b>`;
   say(d.length>=5?`${fullName()} đã làm xong câu đố hôm nay rồi, giỏi quá! Chơi một ván với máy nhé?`:`Chào ${fullName()}! Mình là Khủng Long Xanh. Muốn giỏi cờ thì mỗi ngày giải vài câu đố và chơi vài ván. Bắt đầu với câu đố hôm nay nhé!`);
 }
 $('homeBtn').onclick=goHome;
+$('progressBtn').onclick=()=>openProgress();
+$('parentBtn').onclick=()=>openParent();
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
   const g=b.dataset.go;
   if(g==='online'){openOnline();return}
@@ -526,7 +570,7 @@ function flipped(g){
 }
 
 // ====== Chơi cờ ======
-let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0,myColor='w',localOver=false,gameToken=0;
+let game,mode,selected=null,lastMove=null,hint=null,busy=false,lastExplained=null,startedLevel=0,myColor='w',localOver=false,gameToken=0,ratedToken=-1;
 // ====== Đồng hồ ======
 const TC=[{m:0,inc:0,label:'Không'},{m:5,inc:3,label:'5 phút'},{m:10,inc:5,label:'10 phút'},{m:15,inc:10,label:'15 phút'}];
 const fmtT=ms=>{ms=Math.max(0,ms);const sec=ms<10000?Math.ceil(ms/100)/10:Math.ceil(ms/1000);if(ms<10000)return '0:'+sec.toFixed(1).padStart(4,'0');return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
@@ -546,6 +590,7 @@ function updateClocks(){
 }
 function localTimeout(color){
   lcStop();localOver=true;busy=false;LC[color]=0;progress.games++;
+  if(mode==='bot'&&ratedToken!==gameToken){ratedToken=gameToken;rateGame(color===myColor?0:1)}
   if(mode==='bot'){
     if(color===myColor)say('Hết giờ rồi! Máy thắng ván này. Lần sau con nhớ để ý đồng hồ nhé.');
     else{progress.wins++;say(`Máy hết giờ! ${fullName()} thắng rồi!`,{happy:true});confetti();sfx.win()}
@@ -690,12 +735,13 @@ async function botTurn(tok){
 function endCheck(){
   if(!game.isGameOver())return false;
   lcStop();progress.games++;
+  let dG=0;if(mode==='bot'&&ratedToken!==gameToken){ratedToken=gameToken;dG=rateGame(game.isCheckmate()?(game.turn()!==myColor?1:0):0.5)}
   if(game.isCheckmate()){
     const loser=game.turn();
     if(mode==='bot'&&loser!==myColor){
       progress.wins++;progress.levelWins[startedLevel]=(progress.levelWins[startedLevel]||0)+1;
       const next=startedLevel<LEVELS.length-1&&progress.levelWins[startedLevel]>=2?` Con đã thắng mức này ${progress.levelWins[startedLevel]} lần, thử mức ${LEVELS[startedLevel+1].name.split(' ')[1]} xem!`:'';
-      say(`Chiếu hết! ${fullName()} thắng rồi!`+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
+      say(`Chiếu hết! ${fullName()} thắng rồi!`+(dG?` Elo ${signed(dG)}.`:'')+next+' Bấm Xem lại ván để xem con đã đi hay ở đâu.',{happy:true});confetti();sfx.win();
     }else if(mode==='bot')say('Máy chiếu hết rồi. Không sao đâu con! Bấm Xem lại ván để tìm xem mình sai ở đâu nhé.');
     else{say(`Chiếu hết! ${loser==='w'?'Bên Đen':'Bên Trắng'} thắng rồi!`,{happy:true});confetti();sfx.win()}
   }else if(game.isStalemate())say('Hết nước đi mà Vua không bị chiếu, nên ván này hòa. Lần sau khi đang thắng, nhớ chừa đường cho Vua bên kia nhé!');
@@ -869,6 +915,7 @@ function puzzleMove(mv){
   if(p.theme==='mate1'||(p.theme==='mate2'&&P.step===2))ok=g.isCheckmate();
   else ok=u===sol[P.step].slice(0,4);
   if(!ok){
+    if(!P.rated){P.rated=true;ratePuzzle(p.theme,0,p.id)}
     P.failed=true;sfx.bad();renderPuzzle({[mv.to]:'bad'});
     say(['Chưa đúng rồi. ','Gần rồi, nhưng chưa phải. ','Thử lại nào! '][Math.floor(Math.random()*3)]+'Con nhìn xem có chiếu được không, có ăn được gì không?');
     P.busy=true;setTimeout(()=>{g.undo();P.last=null;P.busy=false;renderPuzzle()},1100);return;
@@ -883,6 +930,7 @@ function puzzleMove(mv){
   // giải xong
   P.done=true;renderPuzzle({[mv.to]:'good'});
   const stars=P.failed?1:P.hints?2:3;
+  let dElo=0;if(!P.rated){P.rated=true;dElo=ratePuzzle(p.theme,P.hints?0.5:1,p.id)}
   progress.solved[p.id]=Math.max(progress.solved[p.id]||0,stars);
   if(P.daily){const k=todayKey();progress.daily[k]=progress.daily[k]||[];if(!progress.daily[k].includes(p.id))progress.daily[k].push(p.id)}
   save();sfx.win();
@@ -890,6 +938,7 @@ function puzzleMove(mv){
   if(p.theme==='mate1'||p.theme==='mate2')msg+='Chiếu hết! Vua đối phương không còn đường chạy.';
   else if(p.theme==='fork')msg+=`Quân ${NAMES[res.piece]} tấn công 2 quân cùng lúc, đối phương chỉ cứu được một!`;
   else msg+=`Ăn được quân ${NAMES[res.captured||'p']} mà không bị mất gì.`;
+  if(dElo)msg+=` (Elo câu đố ${signed(dElo)})`;
   if(P.daily&&(progress.daily[todayKey()]||[]).length>=P.list.length){msg+=` ${shortName()} đã xong 5 câu đố hôm nay!`;confetti()}
   say(msg,{happy:true});
   // diễn tiếp phần còn lại cho câu thắng quân
@@ -973,6 +1022,7 @@ function updateHeader(){const p=curPlayer();
 function statsOf(id){const pr=Object.assign(blankProgress(),lsGet('covua-progress-'+id)||{});
   return `🧩 ${Object.keys(pr.solved).length} câu · 🏆 ${pr.wins} ván`}
 function openPlayers(){
+  $('lockView').classList.add('hidden');
   show('players');updateHeader();
   const cards=players.list.map(p=>`<button class="pcard${p.id===players.current?' last':''}" data-id="${p.id}">
       <span class="del" data-del="${p.id}" role="button" aria-label="Xóa">✕</span>
@@ -1036,6 +1086,7 @@ $('delOk').onclick=()=>{
 };
 $('delAns').addEventListener('keydown',e=>{if(e.key==='Enter')$('delOk').click()});
 $('delCancel').onclick=()=>{delId=null;openPlayers()};
+/*EXTRAS*/
 /*ONLINE*/
 openPlayers();
 }

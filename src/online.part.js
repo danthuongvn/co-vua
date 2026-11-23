@@ -37,6 +37,7 @@ function cleanText(t){
   for(const re of BAD_RE)t=t.replace(re,(m,a,w)=>a+'*'.repeat(Math.min(w.length,4)));
   return t;
 }
+const chatOff=()=>!!(MYP&&MYP.settings&&MYP.settings.chatOff);
 const QUICK=['👍','😄','😮','🎉','❤️','🤝','Chơi ván nữa nhé!','Hay quá!','Bạn giỏi quá!','Mình đang nghĩ...','Chúc bạn chơi vui!','Cảm ơn bạn!'];
 
 // ---- Mở mục online ----
@@ -158,7 +159,7 @@ function openHub(){show('onHub');renderMe();renderFriends();renderHubClock();
 function renderMe(){
   if(!MYP)return;
   $('meAv').textContent=MYP.avatar;$('meName').textContent=MYP.name;$('meCode').textContent=MYP.code;
-  const s=MYP.stats||{};$('meStats').textContent=`🏆 Thắng ${s.wins||0} · Thua ${s.losses||0} · Hòa ${s.draws||0}`;
+  const s=MYP.stats||{};$('meStats').textContent=`📈 Elo ${s.elo||ELO_START} · 🏆 Thắng ${s.wins||0} · Thua ${s.losses||0} · Hòa ${s.draws||0}`;
 }
 function watchFriends(){
   Object.keys(FRIENDS).forEach(fid=>{
@@ -167,7 +168,7 @@ function watchFriends(){
     const [a,b]=[ME.uid,fid].sort();
     listen(ref(`chats/${a}/${b}`).limitToLast(1),'child_added',s=>{const m=s.val();
       if(m&&m.from===fid&&(m.ts||0)>(lsRead()[fid]||0)&&!(view==='onChat'&&CH&&CH.fid===fid)&&!(view==='online'&&OG.opp===fid&&!$('miniChat').classList.contains('hidden'))){UNREAD[fid]=true;renderFriends();
-        if(m.ts>Date.now()-60000)toast(`💬 ${FRIENDS[fid]?FRIENDS[fid].name:'Bạn'} nhắn tin`,'Xem',()=>openChat(fid))}});
+        if(m.ts>Date.now()-60000&&!chatOff())toast(`💬 ${FRIENDS[fid]?FRIENDS[fid].name:'Bạn'} nhắn tin`,'Xem',()=>openChat(fid))}});
   });
 }
 function renderFriends(){
@@ -175,7 +176,7 @@ function renderFriends(){
   $('friendList').innerHTML=ids.length?ids.map(fid=>{const f=FRIENDS[fid];
     return `<div class="frow"><div class="av">${esc(f.avatar)}<span class="dot2 ${STATUS[fid]?'on':''}"></span></div>
       <div class="nm">${esc(f.name)}<div class="note">${STATUS[fid]?'Đang online':'Offline'} · ${esc(f.code)}</div></div>
-      <button class="btn small" data-chat="${fid}">💬${UNREAD[fid]?'<span class="badge">mới</span>':''}</button>
+      ${chatOff()?'':`<button class="btn small" data-chat="${fid}">💬${UNREAD[fid]?'<span class="badge">mới</span>':''}</button>`}
       <button class="btn green small" data-play="${fid}">⚔️</button></div>`}).join('')
     :'<div class="note" style="text-align:center;padding:10px">Chưa có bạn nào. Gửi ID của bạn cho bạn bè, hoặc nhập ID của bạn ấy ở ô trên.</div>';
   $('friendList').querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>openChat(b.dataset.chat));
@@ -219,11 +220,13 @@ function attachMessages(fid,box){
   r.on('child_added',fn);return ()=>r.off('child_added',fn);
 }
 async function sendMsg(fid,text){
+  if(chatOff())return;
   const t=cleanText(text);if(!t)return;
   try{await ref(chatPath(fid)).push({from:ME.uid,text:t,ts:TS()})}catch(e){say('Chưa gửi được tin nhắn.')}
 }
 function openChat(fid){
   const f=FRIENDS[fid];if(!f)return;
+  if(chatOff()){say('Bố mẹ đã tắt phần nhắn tin. Con vẫn mời bạn chơi cờ được nhé!');return}
   if(CH&&CH.off)CH.off();
   CH={fid,off:null};show('onChat');
   $('chatAv').textContent=f.avatar;$('chatName').textContent=f.name;
@@ -253,7 +256,7 @@ const OG={gid:null,data:null,chess:null,myColor:'w',opp:null,sel:null,off:null,w
 async function inviteFriend(fid){
   const f=FRIENDS[fid];if(!f||!MYP)return;
   const gid=ref('games').push().key,meWhite=Math.random()<.5;
-  const names={[ME.uid]:{name:MYP.name,avatar:MYP.avatar},[fid]:{name:f.name,avatar:f.avatar}};
+  const names={[ME.uid]:{name:MYP.name,avatar:MYP.avatar,elo:(MYP.stats&&MYP.stats.elo)||ELO_START},[fid]:{name:f.name,avatar:f.avatar}};
   try{
     const tc=TC[progress.onlineTc===undefined?2:progress.onlineTc]||TC[0];
     const g={white:meWhite?ME.uid:fid,black:meWhite?fid:ME.uid,status:'waiting',moves:'',createdAt:TS(),by:ME.uid,names};
@@ -273,7 +276,7 @@ function renderInvites(inv){
     <div class="nm">${esc(v.name)}<div class="note">mời bạn chơi một ván!</div></div>
     <button class="btn green small" data-go1="${fid}">Chơi</button><button class="btn red small" data-no1="${fid}">Không</button></div>`}).join('');
   const accept=async fid=>{const v=inv[fid];
-    try{await ref().update({[`invites/${ME.uid}/${fid}`]:null,[`games/${v.gameId}/status`]:'active',[`games/${v.gameId}/startedAt`]:TS()});
+    try{await ref().update({[`invites/${ME.uid}/${fid}`]:null,[`games/${v.gameId}/status`]:'active',[`games/${v.gameId}/startedAt`]:TS(),[`games/${v.gameId}/names/${ME.uid}/elo`]:(MYP.stats&&MYP.stats.elo)||ELO_START});
       watchGame(v.gameId,fid)}catch(e){say('Ván cờ này không còn nữa.');ref(`invites/${ME.uid}/${fid}`).remove()}};
   $('invBox').querySelectorAll('[data-go1]').forEach(b=>b.onclick=()=>accept(b.dataset.go1));
   $('invBox').querySelectorAll('[data-no1]').forEach(b=>b.onclick=async()=>{const fid=b.dataset.no1;try{await ref().update({[`invites/${ME.uid}/${fid}`]:null,[`games/${inv[fid].gameId}/status`]:'declined'})}catch(e){ref(`invites/${ME.uid}/${fid}`).remove()}});
@@ -285,7 +288,7 @@ function renderInvites(inv){
 // ---- Ván cờ online ----
 function leaveGame(){if(OG.off)OG.off();OG.off=null;if(OG.chatOff)OG.chatOff();OG.chatOff=null;OG.gid=null;OG.data=null;OG.waiting=false}
 function watchGame(gid,fid){
-  leaveGame();OG.timeoutSent=false;OG.gid=gid;OG.opp=fid;OG.counted=!!(lsGet('covua-counted')||{})[gid];OG.waiting=true;OG.lastLen=-1;
+  leaveGame();OG.timeoutSent=false;OG.eloMsg='';OG.gid=gid;OG.opp=fid;OG.counted=!!(lsGet('covua-counted')||{})[gid];OG.waiting=true;OG.lastLen=-1;
   const r=ref('games/'+gid);
   const fn=s=>{const d=s.val();if(!d)return;OG.data=d;
     if(d.status==='waiting')return;
@@ -352,8 +355,13 @@ function onlineOver(d){
   if(!OG.counted){OG.counted=true;const cnt=lsGet('covua-counted')||{};cnt[OG.gid]=1;lsSet('covua-counted',cnt);
     const key={win:'wins',loss:'losses',draw:'draws'}[myRes];
     ref(`users/${ME.uid}/stats/${key}`).transaction(v=>(v||0)+1).catch(()=>{});
+    const nn=d.names||{},mine=(nn[ME.uid]&&nn[ME.uid].elo)||(MYP.stats&&MYP.stats.elo)||ELO_START,theirs=(nn[OG.opp]&&nn[OG.opp].elo)||ELO_START;
+    const sc=myRes==='win'?1:myRes==='loss'?0:0.5,ne=Math.max(100,eloNew(mine,theirs,sc,32));
+    ref(`users/${ME.uid}/stats/elo`).set(ne).catch(()=>{});
+    if(curPlayer()){eloOf().o=ne;recordElo();save()}
+    OG.eloMsg=` Elo online ${signed(ne-mine)}.`;
     if(myRes==='win'){confetti();sfx.win()}}
-  say(why+' '+(myRes==='win'?`Bạn thắng ${oppName()} rồi!`:myRes==='loss'?`${oppName()} thắng ván này. Bấm Xem lại ván để học từ lỗi nhé!`:'Ván cờ hòa!'),{happy:myRes==='win'});
+  say(why+' '+(myRes==='win'?`Bạn thắng ${oppName()} rồi!`:myRes==='loss'?`${oppName()} thắng ván này. Bấm Xem lại ván để học từ lỗi nhé!`:'Ván cờ hòa!')+(OG.eloMsg||''),{happy:myRes==='win'});
 }
 function onlineRemaining(c){
   const d=OG.data;if(!d||!d.clock)return null;
@@ -381,6 +389,7 @@ $('ogBack').onclick=()=>{leaveGame();openHub()};
 $('ogRematch').onclick=()=>{const f=OG.opp;leaveGame();inviteFriend(f)};
 $('ogReview').onclick=()=>{if(!OG.chess)return;game=OG.chess;rvColor=OG.myColor;reviewFrom='online';flip=OG.myColor==='b';const keep=OG.chess;leaveGame();game=keep;reviewGame()};
 $('ogChat').onclick=()=>{
+  if(chatOff()){say('Bố mẹ đã tắt phần nhắn tin.');return}
   const mc=$('miniChat');const showIt=mc.classList.contains('hidden');mc.classList.toggle('hidden',!showIt);
   if(showIt){if(OG.chatOff)OG.chatOff();OG.chatOff=attachMessages(OG.opp,$('ogMsgs'));drawQuick($('ogQuick'),t=>sendMsg(OG.opp,t))}
 };
@@ -397,3 +406,30 @@ function toast(text,btn,fn){
 }
 // Đã đăng nhập từ trước: kết nối ngầm để nhận lời mời và tin nhắn
 if(lsGet('covua-online')===1)FB.load().then(bootOnline).catch(()=>{});
+
+// ---- Phần online trong trang phụ huynh ----
+async function renderParentOnline(box){
+  if(!FB.auth||!ME||!MYP){box.innerHTML='<div class="note">Phần online: chưa đăng nhập trên máy này. Khi bé đăng nhập 🌐, bố mẹ sẽ quản lý được chat, bạn bè và báo cáo ở đây.</div>';return}
+  const ids=Object.keys(FRIENDS);
+  box.innerHTML=`<div class="form">
+    <b>🌐 Tài khoản online: <span id="poName"></span> (ID ${esc(MYP.code)})</b>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="poChat" ${chatOff()?'':'checked'}> Cho phép nhắn tin với bạn bè</label>
+    <div><b>Bạn bè (${ids.length})</b></div>
+    <div class="flist">${ids.map(fid=>`<div class="frow"><div class="av">${esc(FRIENDS[fid].avatar)}</div><div class="nm">${esc(FRIENDS[fid].name)}<div class="note">${esc(FRIENDS[fid].code)}</div></div>
+      <button class="btn orange small" data-unf="${fid}">Hủy kết bạn</button><button class="btn red small" data-blk="${fid}">Chặn</button></div>`).join('')||'<div class="note">Chưa có bạn nào.</div>'}</div>
+    <div><b>🚩 Báo cáo bé đã gửi</b></div><div id="poReports" class="note">Đang tải...</div>
+  </div>`;
+  $('poName').textContent=MYP.name;
+  $('poChat').onchange=async e=>{try{await ref(`users/${ME.uid}/settings/chatOff`).set(!e.target.checked);say(e.target.checked?'Đã bật nhắn tin.':'Đã tắt nhắn tin. Bé vẫn chơi online với bạn bè được.',{voice:false})}
+    catch(err){e.target.checked=!e.target.checked;say('Chưa lưu được. Bố mẹ cập nhật quy tắc Firebase mới nhé.',{voice:false})}};
+  box.querySelectorAll('[data-unf]').forEach(b=>b.onclick=async()=>{const fid=b.dataset.unf;
+    await ref().update({[`friends/${ME.uid}/${fid}`]:null,[`friends/${fid}/${ME.uid}`]:null}).catch(()=>{});renderParentOnline(box)});
+  box.querySelectorAll('[data-blk]').forEach(b=>b.onclick=async()=>{const fid=b.dataset.blk;
+    await ref().update({[`blocks/${ME.uid}/${fid}`]:true,[`friends/${ME.uid}/${fid}`]:null,[`friends/${fid}/${ME.uid}`]:null}).catch(()=>{});renderParentOnline(box)});
+  try{
+    const snap=await ref('reports').orderByChild('by').equalTo(ME.uid).get();const list=[];snap.forEach(c=>{list.push(c.val())});
+    list.sort((a,b)=>b.ts-a.ts);
+    const nameOf=uid=>FRIENDS[uid]?FRIENDS[uid].name:'(đã hủy kết bạn)';
+    $('poReports').innerHTML=list.length?list.slice(0,20).map(r=>`<div class="frow" style="display:block"><b>${esc(nameOf(r.about))}</b> · ${new Date(r.ts).toLocaleString('vi-VN')}<div class="note">${esc(r.text||'')}</div></div>`).join(''):'Chưa có báo cáo nào.';
+  }catch(e){$('poReports').textContent='Chưa xem được báo cáo (cần cập nhật quy tắc Firebase mới).'}
+}
