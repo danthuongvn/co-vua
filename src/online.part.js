@@ -16,6 +16,10 @@ const FB={
   }
 };
 const TS=()=>firebase.database.ServerValue.TIMESTAMP;
+// Tài khoản con có thể dùng "tên đăng nhập" thay cho email: đổi thành một email nội bộ (không gửi thư được)
+const KID_DOMAIN='kids.coviua-fab9a.firebaseapp.com';
+const toEmail=x=>{x=String(x).trim();return x.includes('@')?x:x.toLowerCase()+'@'+KID_DOMAIN};
+const loginLabel=e=>String(e||'').endsWith('@'+KID_DOMAIN)?String(e).split('@')[0]:String(e||'');
 const ref=p=>FB.db.ref(p);
 let SRV_OFFSET=0,ME=null,MYP=null,FRIENDS={},STATUS={},LISTENERS=[],UNREAD={},onlineBooted=false,authRegistering=false,authKnown=null,authResolve=null;
 authKnown=new Promise(r=>authResolve=r);
@@ -59,7 +63,7 @@ function bootOnline(){
   if(onlineBooted)return;onlineBooted=true;
   FB.auth.onAuthStateChanged(async u=>{
     stopAll();ME=u;MYP=null;FRIENDS={};STATUS={};UNREAD={};authResolve();
-    if(!u){lsSet('covua-online',0);if(['onHub','onChat','online','onWait'].includes(view))openLogin();return}
+    if(!u){lsSet('covua-online',0);if(['onHub','onChat','online','onWait','onAdmin'].includes(view))openLogin();return}
     lsSet('covua-online',1);
     if(authRegistering)return; // đang đăng ký, hồ sơ sẽ được tạo xong rồi mới vào
     try{await startSession()}catch(e){const k=errKey(e);console.error('session',e);show('onLogin');say(AUTH_ERR[k]||('Có lỗi: '+k));}
@@ -79,16 +83,18 @@ async function startSession(){
   listen(ref('friendRequests/'+ME.uid),'value',s=>renderRequests(s.val()||{}));
   listen(ref('invites/'+ME.uid),'value',s=>renderInvites(s.val()||{}));
 }
-async function createProfile(name,avatar){
+async function createProfile(name,avatar,db,uid){
+  db=db||FB.db;uid=uid||ME.uid;
   const AL='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code=null;
   for(let i=0;i<8&&!code;i++){
     const c=Array.from({length:6},()=>AL[Math.floor(Math.random()*AL.length)]).join('');
-    const r=await ref('codes/'+c).transaction(cur=>cur===null?ME.uid:undefined);
+    const r=await db.ref('codes/'+c).transaction(cur=>cur===null?uid:undefined);
     if(r.committed)code=c;
   }
   if(!code)throw new Error('code');
-  await ref('users/'+ME.uid).set({name,avatar,code,createdAt:Date.now(),stats:{wins:0,losses:0,draws:0}});
+  await db.ref('users/'+uid).set({name,avatar,code,createdAt:Date.now(),stats:{wins:0,losses:0,draws:0}});
+  return code;
 }
 
 // ---- Đăng nhập / đăng ký ----
@@ -117,7 +123,7 @@ const AUTH_ERR={'auth/email-already-in-use':'Email này đã có tài khoản. B
   'PERMISSION_DENIED':'Cơ sở dữ liệu chưa có quy tắc mới. Dán file database.rules.json vào Realtime Database → Rules → Publish, rồi Đăng nhập lại.'};
 const errKey=e=>{const m=String(e&&(e.code||e.message)||e);return /permission/i.test(m)?'PERMISSION_DENIED':(e&&e.code)||m};
 $('onSubmit').onclick=async()=>{
-  const email=$('onEmail').value.trim(),pass=$('onPass').value;
+  const email=toEmail($('onEmail').value),pass=$('onPass').value;
   if(!email||!pass){say('Bạn nhập email và mật khẩu nhé.');return}
   $('onSubmit').disabled=true;
   try{
@@ -143,10 +149,13 @@ $('onSubmit').onclick=async()=>{
 $('onForgot').onclick=async()=>{
   const email=$('onEmail').value.trim();
   if(!email){say('Nhập email vào ô trên rồi bấm Quên mật khẩu nhé.');return}
+  if(!email.includes('@')){say('Tài khoản bằng tên đăng nhập không lấy lại mật khẩu qua email được. Nhờ bố mẹ vào Quản lý tài khoản con để tạo lại nhé.');return}
   try{await FB.auth.sendPasswordResetEmail(email);say('Đã gửi thư đặt lại mật khẩu. Bố mẹ mở email để đặt mật khẩu mới nhé.')}
   catch(e){say(AUTH_ERR[e.code]||'Chưa gửi được, thử lại nhé.')}
 };
-$('onLogout').onclick=async()=>{try{await ref('status/'+ME.uid).set({online:false,ts:TS()})}catch(e){}FB.auth.signOut()};
+async function logout(){try{await ref('status/'+ME.uid).set({online:false,ts:TS()})}catch(e){}leaveGame();if(CH&&CH.off){CH.off();CH=null}await FB.auth.signOut();regMode=false;openLogin();say('Đã đăng xuất. Đăng nhập tài khoản khác nhé.',{voice:false})}
+$('onLogout').onclick=logout;$('onLogout2').onclick=logout;
+$('adminBtn').onclick=()=>askGate('Quản lý tài khoản con',openAdmin);
 
 // ---- Sảnh: hồ sơ, bạn bè, lời mời ----
 function renderHubClock(){
@@ -432,4 +441,120 @@ async function renderParentOnline(box){
     const nameOf=uid=>FRIENDS[uid]?FRIENDS[uid].name:'(đã hủy kết bạn)';
     $('poReports').innerHTML=list.length?list.slice(0,20).map(r=>`<div class="frow" style="display:block"><b>${esc(nameOf(r.about))}</b> · ${new Date(r.ts).toLocaleString('vi-VN')}<div class="note">${esc(r.text||'')}</div></div>`).join(''):'Chưa có báo cáo nào.';
   }catch(e){$('poReports').textContent='Chưa xem được báo cáo (cần cập nhật quy tắc Firebase mới).'}
+}
+
+// ---- Quản lý tài khoản con (tài khoản phụ huynh) ----
+// Dùng một phiên Firebase phụ để tạo/đăng nhập tài khoản con mà không làm thoát tài khoản phụ huynh.
+async function withKidAuth(fn){
+  const app2=firebase.apps.find(a=>a.name==='kid')||firebase.initializeApp(window.FIREBASE_CONFIG,'kid');
+  const a2=app2.auth();
+  try{await a2.setPersistence(firebase.auth.Auth.Persistence.NONE)}catch(e){}
+  try{return await fn(a2,app2.database())}finally{try{await a2.signOut()}catch(e){}}
+}
+async function linkKid(a2,db2,login){
+  const kid=a2.currentUser.uid;
+  const prof=(await db2.ref('users/'+kid).get()).val();
+  if(!prof)throw {code:'x',message:'Tài khoản này chưa có hồ sơ. Đăng nhập tài khoản đó một lần trên web rồi thử lại.'};
+  await db2.ref().update({[`parents/${kid}/${ME.uid}`]:true,[`children/${ME.uid}/${kid}`]:{name:prof.name,avatar:prof.avatar,code:prof.code,login:login,ts:TS()}});
+}
+let adminAv='🐼';
+async function openAdmin(){
+  show('onAdmin');
+  const box=$('onAdmin');
+  box.innerHTML=`<div class="sectitle">👨‍👩‍👦 Quản lý tài khoản con</div>
+    <div class="note">Tài khoản đang đăng nhập (<b id="adName"></b>) là tài khoản phụ huynh. Tạo tài khoản cho con ở dưới, hoặc liên kết tài khoản con đã có.</div>
+    <div id="kidList" class="note">Đang tải...</div>
+    <details class="form"><summary>➕ Tạo tài khoản mới cho con</summary>
+      <input id="kName" maxlength="20" placeholder="Tên hiển thị, ví dụ: Nhật Minh" autocomplete="off">
+      <input id="kLogin" maxlength="40" placeholder="Tên đăng nhập (vd: minh2018) hoặc email" autocomplete="off" autocapitalize="none">
+      <input id="kPass" type="text" maxlength="40" placeholder="Mật khẩu cho con (ít nhất 6 ký tự)" autocomplete="off">
+      <div class="avs" id="kAvs"></div>
+      <div class="note">Tên đăng nhập không cần email, nhưng nếu con quên mật khẩu thì không lấy lại được: bố mẹ ghi lại mật khẩu nhé.</div>
+      <div class="controls"><button class="btn green" id="kCreate">Tạo tài khoản con</button></div>
+    </details>
+    <details class="form"><summary>🔗 Liên kết tài khoản con đã có</summary>
+      <input id="lLogin" placeholder="Email hoặc tên đăng nhập của con" autocomplete="off" autocapitalize="none">
+      <input id="lPass" type="password" placeholder="Mật khẩu của con" autocomplete="off">
+      <div class="controls"><button class="btn green" id="lLink">Liên kết</button></div>
+    </details>
+    <div class="controls"><button class="btn" id="adBack">🌐 Về màn hình bạn bè</button><button class="btn orange" id="adLogout">🚪 Đăng xuất</button></div>`;
+  $('adName').textContent=MYP?MYP.name:'';
+  const drawAv=()=>{$('kAvs').innerHTML=AVATARS.map(a=>`<button class="${a===adminAv?'on':''}" data-a="${a}">${a}</button>`).join('');
+    $('kAvs').querySelectorAll('button').forEach(b=>b.onclick=()=>{adminAv=b.dataset.a;drawAv()})};drawAv();
+  $('adBack').onclick=openHub;$('adLogout').onclick=logout;
+  $('kCreate').onclick=async()=>{
+    const name=cleanText($('kName').value).slice(0,20),login=$('kLogin').value.trim(),pass=$('kPass').value;
+    if(!name){say('Nhập tên hiển thị cho con nhé.');return}
+    if(!login.includes('@')&&!/^[a-zA-Z0-9._-]{3,30}$/.test(login)){say('Tên đăng nhập 3–30 ký tự, chỉ gồm chữ không dấu, số, dấu chấm, gạch.');return}
+    if(pass.length<6){say('Mật khẩu cần ít nhất 6 ký tự.');return}
+    $('kCreate').disabled=true;
+    try{
+      await withKidAuth(async(a2,db2)=>{
+        const cred=await a2.createUserWithEmailAndPassword(toEmail(login),pass);
+        await createProfile(name,adminAv,db2,cred.user.uid);
+        await linkKid(a2,db2,loginLabel(toEmail(login)));
+      });
+      say(`Đã tạo tài khoản cho ${name}. Con đăng nhập bằng "${loginLabel(toEmail(login))}" và mật khẩu bố mẹ vừa đặt.`,{happy:true});
+      openAdmin();
+    }catch(e){const k=errKey(e);say(e.code==='x'?e.message:k==='auth/email-already-in-use'?'Tên đăng nhập hoặc email này đã có. Dùng mục Liên kết nếu đó là tài khoản của con.':(AUTH_ERR[k]||('Có lỗi: '+k)))}
+    finally{const b=$('kCreate');if(b)b.disabled=false}
+  };
+  $('lLink').onclick=async()=>{
+    const login=$('lLogin').value.trim(),pass=$('lPass').value;
+    if(!login||!pass){say('Nhập tên đăng nhập (hoặc email) và mật khẩu của con.');return}
+    try{
+      await withKidAuth(async(a2,db2)=>{const c=await a2.signInWithEmailAndPassword(toEmail(login),pass);
+        if(c.user.uid===ME.uid)throw {code:'x',message:'Đây là chính tài khoản đang đăng nhập.'};
+        await linkKid(a2,db2,loginLabel(toEmail(login)))});
+      say('Đã liên kết tài khoản con.',{happy:true});openAdmin();
+    }catch(e){const k=errKey(e);say(e.code==='x'?e.message:(AUTH_ERR[k]||('Có lỗi: '+k)))}
+  };
+  renderKids();
+}
+async function renderKids(){
+  const box=$('kidList');if(!box)return;
+  let kids={};
+  try{kids=(await ref('children/'+ME.uid).get()).val()||{}}catch(e){box.textContent='Chưa đọc được (bố mẹ cập nhật quy tắc Firebase mới nhé).';return}
+  const ids=Object.keys(kids);
+  if(!ids.length){box.innerHTML='<div class="note" style="text-align:center;padding:8px">Chưa có tài khoản con nào.</div>';return}
+  box.innerHTML='';
+  for(const kid of ids){
+    const card=document.createElement('div');card.className='form';card.style.gap='8px';box.appendChild(card);
+    const [u,st,fr,rq,rp]=await Promise.all([
+      ref('users/'+kid).get().then(s=>s.val()).catch(()=>null),
+      ref('status/'+kid).get().then(s=>s.val()).catch(()=>null),
+      ref('friends/'+kid).get().then(s=>s.val()||{}).catch(()=>({})),
+      ref('friendRequests/'+kid).get().then(s=>s.val()||{}).catch(()=>({})),
+      ref('reports').orderByChild('by').equalTo(kid).get().then(s=>{const l=[];s.forEach(c=>{l.push(c.val())});return l}).catch(()=>null)]);
+    const k=kids[kid],p=u||k,stt=(u&&u.stats)||{},off=!!(u&&u.settings&&u.settings.chatOff);
+    const fids=Object.keys(fr),rids=Object.keys(rq);
+    card.innerHTML=`<div style="display:flex;align-items:center;gap:10px"><span style="font-size:2.2rem">${esc(p.avatar||'🙂')}</span>
+        <div style="flex:1;min-width:0"><b class="kn"></b> ${st&&st.online?'🟢':'⚪'}<div class="note">ID ${esc(p.code||'')} · đăng nhập: <span class="kl"></span></div></div></div>
+      <div class="note">📈 Elo online <b>${stt.elo||ELO_START}</b> · 🏆 thắng ${stt.wins||0} · thua ${stt.losses||0} · hòa ${stt.draws||0}</div>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" class="kchat" ${off?'':'checked'}> Cho phép nhắn tin</label>
+      ${rids.length?`<div><b>Lời mời kết bạn đang chờ</b></div>`+rids.map(r=>`<div class="frow"><div class="av">${esc(rq[r].avatar)}</div><div class="nm">${esc(rq[r].name)}<div class="note">${esc(rq[r].code)}</div></div><button class="btn red small" data-rqno="${r}">Từ chối</button></div>`).join(''):''}
+      <div><b>Bạn bè (${fids.length})</b></div>
+      ${fids.map(f=>`<div class="frow"><div class="av">${esc(fr[f].avatar)}</div><div class="nm">${esc(fr[f].name)}<div class="note">${esc(fr[f].code)}</div></div>
+        <button class="btn small" data-msgs="${f}">💬</button><button class="btn orange small" data-unf="${f}">Hủy</button><button class="btn red small" data-blk="${f}">Chặn</button></div><div class="msgs small hidden" data-box="${f}"></div>`).join('')||'<div class="note">Chưa có bạn.</div>'}
+      <div><b>🚩 Báo cáo con đã gửi</b></div>
+      <div class="note">${rp===null?'Chưa xem được (cần quy tắc mới).':rp.length?rp.sort((a,b)=>b.ts-a.ts).slice(0,10).map(r=>`${new Date(r.ts).toLocaleString('vi-VN')}: ${esc((fr[r.about]||{}).name||'người đã hủy kết bạn')} – ${esc(r.text||'')}`).join('<br>'):'Chưa có báo cáo nào.'}</div>
+      <div class="controls"><button class="btn red small" data-unlink="1">Gỡ liên kết</button></div>`;
+    card.querySelector('.kn').textContent=p.name||'';card.querySelector('.kl').textContent=k.login||'';
+    card.querySelector('.kchat').onchange=async e=>{try{await ref(`users/${kid}/settings/chatOff`).set(!e.target.checked);say(e.target.checked?'Đã bật nhắn tin cho con.':'Đã tắt nhắn tin cho con.',{voice:false})}
+      catch(err){e.target.checked=!e.target.checked;say('Chưa lưu được (cần quy tắc Firebase mới).',{voice:false})}};
+    card.querySelectorAll('[data-rqno]').forEach(b=>b.onclick=async()=>{await ref(`friendRequests/${kid}/${b.dataset.rqno}`).remove().catch(()=>{});renderKids()});
+    card.querySelectorAll('[data-unf]').forEach(b=>b.onclick=async()=>{const f=b.dataset.unf;await ref().update({[`friends/${kid}/${f}`]:null,[`friends/${f}/${kid}`]:null}).catch(()=>say('Chưa hủy được.'));renderKids()});
+    card.querySelectorAll('[data-blk]').forEach(b=>b.onclick=async()=>{const f=b.dataset.blk;await ref().update({[`blocks/${kid}/${f}`]:true,[`friends/${kid}/${f}`]:null,[`friends/${f}/${kid}`]:null}).catch(()=>say('Chưa chặn được.'));renderKids()});
+    card.querySelectorAll('[data-msgs]').forEach(b=>b.onclick=async()=>{
+      const f=b.dataset.msgs,bx=card.querySelector(`[data-box="${f}"]`);bx.classList.toggle('hidden');if(bx.classList.contains('hidden'))return;
+      bx.textContent='Đang tải...';const [a,c]=[kid,f].sort();
+      try{const sn=await ref(`chats/${a}/${c}`).limitToLast(30).get();bx.innerHTML='';
+        sn.forEach(m=>{const v=m.val(),d=document.createElement('div');d.className='msg'+(v.from===kid?' me':'');d.textContent=v.text;
+          const t=document.createElement('small');t.textContent=(v.from===kid?(p.name||''):(fr[f].name||''))+' · '+new Date(v.ts).toLocaleString('vi-VN');d.appendChild(t);bx.appendChild(d)});
+        if(!bx.children.length)bx.textContent='Chưa có tin nhắn.';}
+      catch(e){bx.textContent='Chưa xem được (cần quy tắc mới).'}});
+    card.querySelector('[data-unlink]').onclick=async e=>{
+      if(e.target.dataset.arm!=='1'){e.target.dataset.arm='1';e.target.textContent='Bấm lần nữa để gỡ';return}
+      await ref().update({[`parents/${kid}/${ME.uid}`]:null,[`children/${ME.uid}/${kid}`]:null}).catch(()=>{});renderKids()};
+  }
 }

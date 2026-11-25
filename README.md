@@ -12,6 +12,7 @@ Web chơi và luyện cờ vua bằng tiếng Việt cho trẻ em. Bạn Khủng
 - **Xem lại ván**: sau mỗi ván, máy chấm từng nước của bé (Tuyệt vời / Tốt / Chưa chuẩn / Sai lầm) và chỉ nước tốt hơn ngay trên bàn cờ.
 - **Thói quen suy nghĩ**: nhắc 3 câu hỏi trước mỗi nước; có thể tắt lời nhắc quân bị dọa để bé tự nghĩ.
 - **Chơi online với bạn bè**: đăng ký bằng email + mật khẩu, mỗi tài khoản có ID 6 ký tự. Chỉ kết bạn khi bên kia đồng ý; chỉ bạn bè mới mời chơi và nhắn tin được. Chat tự che từ tục, link, email, số điện thoại; có nút Báo cáo và Chặn.
+- **Tài khoản phụ huynh quản lý tài khoản con** (🌐 → 👨‍👩‍👦 Quản lý tài khoản con): tạo tài khoản cho con bằng tên đăng nhập (không cần email) hoặc liên kết tài khoản có sẵn; xem Elo, thắng/thua, trạng thái online; bật/tắt nhắn tin; xem tin nhắn, bạn bè, lời mời kết bạn, báo cáo; hủy kết bạn, chặn.
 - **Elo + biểu đồ tiến bộ**: điểm ước tính riêng cho ván đấu, câu đố và online; biểu đồ 30 ngày (📈 Tiến bộ).
 - **Trang phụ huynh** (khóa bằng phép tính): giới hạn thời gian chơi mỗi ngày cho từng bé, nhắc nghỉ mắt mỗi 25 phút, xem tiến độ; với tài khoản online: bật/tắt nhắn tin, hủy kết bạn/chặn, xem báo cáo bé đã gửi.
 - **Cài như ứng dụng, chơi không cần mạng**: nút 📲 Cài vào máy; khi mất mạng vẫn chơi với máy (cả Stockfish), câu đố và bài học.

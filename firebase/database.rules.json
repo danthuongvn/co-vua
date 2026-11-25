@@ -43,7 +43,8 @@
           },
           "$other": {
             ".validate": false
-          }
+          },
+          ".write": "auth != null && root.child('parents').child($uid).child(auth.uid).exists()"
         }
       }
     },
@@ -62,19 +63,19 @@
     },
     "blocks": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
+        ".read": "auth != null && (auth.uid === $uid || root.child('parents').child($uid).child(auth.uid).exists())",
         "$other": {
-          ".write": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && (auth.uid === $uid || root.child('parents').child($uid).child(auth.uid).exists())",
           ".validate": "newData.isBoolean()"
         }
       }
     },
     "friendRequests": {
       "$to": {
-        ".read": "auth != null && auth.uid === $to",
+        ".read": "auth != null && (auth.uid === $to || root.child('parents').child($to).child(auth.uid).exists())",
         "$from": {
           ".read": "auth != null && auth.uid === $from",
-          ".write": "auth != null && ((auth.uid === $from && $from !== $to && (data.exists() || (!root.child('blocks').child($to).child($from).exists() && !root.child('friends').child($to).child($from).exists()))) || (auth.uid === $to && !newData.exists()))",
+          ".write": "auth != null && ((auth.uid === $from && $from !== $to && (data.exists() || (!root.child('blocks').child($to).child($from).exists() && !root.child('friends').child($to).child($from).exists()))) || (auth.uid === $to && !newData.exists()) || (!newData.exists() && root.child('parents').child($to).child(auth.uid).exists()))",
           ".validate": "newData.hasChildren(['name', 'avatar', 'code', 'ts'])",
           "name": {
             ".validate": "newData.isString() && newData.val().length <= 20"
@@ -96,9 +97,9 @@
     },
     "friends": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
+        ".read": "auth != null && (auth.uid === $uid || root.child('parents').child($uid).child(auth.uid).exists())",
         "$fid": {
-          ".write": "auth != null && ((auth.uid === $uid || auth.uid === $fid) && !newData.exists() || (auth.uid === $uid && root.child('friendRequests').child($uid).child($fid).exists()) || (auth.uid === $fid && root.child('friendRequests').child($fid).child($uid).exists()))",
+          ".write": "auth != null && ((auth.uid === $uid || auth.uid === $fid) && !newData.exists() || (auth.uid === $uid && root.child('friendRequests').child($uid).child($fid).exists()) || (auth.uid === $fid && root.child('friendRequests').child($fid).child($uid).exists()) || (!newData.exists() && (root.child('parents').child($uid).child(auth.uid).exists() || root.child('parents').child($fid).child(auth.uid).exists())))",
           ".validate": "newData.hasChildren(['name', 'avatar', 'code'])"
         }
       }
@@ -106,7 +107,7 @@
     "chats": {
       "$a": {
         "$b": {
-          ".read": "auth != null && ((auth.uid === $a && root.child('friends').child($a).child($b).exists()) || (auth.uid === $b && root.child('friends').child($b).child($a).exists()))",
+          ".read": "auth != null && ((auth.uid === $a && root.child('friends').child($a).child($b).exists()) || (auth.uid === $b && root.child('friends').child($b).child($a).exists()) || root.child('parents').child($a).child(auth.uid).exists() || root.child('parents').child($b).child(auth.uid).exists())",
           "$msg": {
             ".write": "auth != null && !data.exists() && root.child('users').child(auth.uid).child('settings').child('chatOff').val() !== true && ((auth.uid === $a && root.child('friends').child($a).child($b).exists()) || (auth.uid === $b && root.child('friends').child($b).child($a).exists()))",
             ".validate": "newData.hasChildren(['from', 'text', 'ts']) && $a < $b",
@@ -143,13 +144,31 @@
       }
     },
     "reports": {
-      ".read": "auth != null && query.orderByChild === 'by' && query.equalTo === auth.uid",
+      ".read": "auth != null && query.orderByChild === 'by' && (query.equalTo === auth.uid || root.child('parents').child(query.equalTo).child(auth.uid).exists())",
       ".indexOn": [
         "by"
       ],
       "$rid": {
         ".write": "auth != null && !data.exists()",
         ".validate": "newData.hasChildren(['by', 'about', 'ts']) && newData.child('by').val() === auth.uid && newData.child('ts').val() === now"
+      }
+    },
+    "parents": {
+      "$kid": {
+        ".read": "auth != null && auth.uid === $kid",
+        "$par": {
+          ".read": "auth != null && auth.uid === $par",
+          ".write": "auth != null && ((auth.uid === $kid && !data.exists() && newData.val() === true) || (auth.uid === $par && !newData.exists()))"
+        }
+      }
+    },
+    "children": {
+      "$par": {
+        ".read": "auth != null && auth.uid === $par",
+        "$kid": {
+          ".write": "auth != null && ((auth.uid === $kid && !data.exists() && newData.parent().parent().parent().child('parents').child($kid).child($par).val() === true) || (auth.uid === $par && !newData.exists()))",
+          ".validate": "newData.hasChildren(['name', 'avatar', 'code', 'ts'])"
+        }
       }
     }
   }

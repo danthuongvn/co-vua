@@ -230,7 +230,7 @@
   <section id="onLogin" class="hidden">
     <div class="form">
       <div class="tabs"><button id="tabLogin" class="on">Đăng nhập</button><button id="tabReg">Đăng ký</button></div>
-      <input id="onEmail" type="email" placeholder="Email (của bố mẹ)" autocomplete="email">
+      <input id="onEmail" type="text" placeholder="Email hoặc tên đăng nhập" autocomplete="username" autocapitalize="none">
       <input id="onPass" type="password" placeholder="Mật khẩu (ít nhất 6 ký tự)" autocomplete="current-password">
       <div id="regExtra" class="hidden" style="display:grid;gap:10px">
         <input id="onPass2" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password">
@@ -248,7 +248,7 @@
       <div class="av" id="meAv"></div>
       <div style="flex:1;min-width:0"><div class="nm" id="meName"></div><div>ID của bạn: <b class="code" id="meCode"></b></div>
         <div class="st" id="meStats"></div></div>
-      <button class="btn orange small" id="onLogout">Thoát</button>
+      <button class="btn orange small" id="onLogout">🚪 Đăng xuất</button>
     </div>
     <div id="invBox"></div>
     <div id="reqBox"></div>
@@ -259,7 +259,13 @@
     <div class="levelrow" id="hubClock"></div>
     <div class="sectitle">Bạn bè</div>
     <div class="flist" id="friendList"></div>
+    <div class="controls">
+      <button class="btn purple" id="adminBtn">👨‍👩‍👦 Quản lý tài khoản con</button>
+      <button class="btn orange" id="onLogout2">🚪 Đăng xuất / đổi tài khoản</button>
+    </div>
   </section>
+
+  <section id="onAdmin" class="hidden" style="display:grid;gap:12px"></section>
 
   <section id="onWait" class="hidden">
     <div class="form" style="text-align:center">
@@ -468,7 +474,7 @@ function show(v){
   $('delForm').classList.toggle('hidden',v!=='delForm');
   $('lessonList').classList.toggle('hidden',v!=='lessonList');
   $('puzzleList').classList.toggle('hidden',v!=='puzzleList');
-  ['onLogin','onHub','onChat','onWait'].forEach(id=>$(id).classList.toggle('hidden',v!==id));
+  ['onLogin','onHub','onChat','onWait','onAdmin'].forEach(id=>$(id).classList.toggle('hidden',v!==id));
   const onBoard=['bot','two','lesson','puzzle','review','online'].includes(v);
   $('onlineBar').classList.toggle('hidden',v!=='online');
   $('onlineControls').classList.toggle('hidden',v!=='online');

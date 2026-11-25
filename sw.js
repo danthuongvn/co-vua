@@ -1,5 +1,5 @@
 // Service worker: cho phép mở web và chơi khi không có mạng (trừ phần online).
-const CACHE='covua-v1';
+const CACHE='covua-v2';
 const CORE=['./','index.html','puzzles.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png',
   'engine/stockfish-19-lite-single.js','engine/stockfish-19-lite-single.wasm'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
